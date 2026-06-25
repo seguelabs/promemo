@@ -113,25 +113,86 @@ fn prompts(memory: &MemoryInput) -> String {
 
 pub fn render_snapshot(snapshot: &RepoSnapshot) -> String {
     let mut out = format!("# Snapshot: {}\n\n", snapshot.feature);
-    out.push_str(&format!("Dry run: `{}`\n\n", snapshot.dry_run));
+    out.push_str("## Overview\n\n");
+    out.push_str(&format!("- Dry run: `{}`\n", snapshot.dry_run));
     if let Some(branch) = &snapshot.branch {
-        out.push_str(&format!("Branch: `{}`\n\n", branch));
+        out.push_str(&format!("- Branch: `{}`\n", branch));
     }
+
     if !snapshot.status_short.is_empty() {
-        out.push_str("## Status\n\n```txt\n");
+        out.push_str("\n## Git Status\n\n```txt\n");
         out.push_str(&snapshot.status_short);
         out.push_str("\n```\n");
     }
+
+    if !snapshot.changed_files.is_empty() {
+        out.push_str("\n## Changed Files\n\n");
+        push_list(&mut out, &snapshot.changed_files);
+    }
+
     if !snapshot.diff_stat.is_empty() {
         out.push_str("\n## Diff Stat\n\n```txt\n");
         out.push_str(&snapshot.diff_stat);
         out.push_str("\n```\n");
     }
+
+    if !snapshot.recent_commits.is_empty() {
+        out.push_str("\n## Recent Commits\n\n");
+        push_list(&mut out, &snapshot.recent_commits);
+    }
+
+    if !snapshot.todos.is_empty() {
+        out.push_str("\n## TODOs And FIXMEs\n\n");
+        for todo in &snapshot.todos {
+            out.push_str(&format!("- {}:{}: {}\n", todo.path, todo.line, todo.text));
+        }
+    }
+
+    if let Some(memory) = &snapshot.existing_memory {
+        out.push_str("\n## Existing Feature Memory\n\n");
+        out.push_str(memory);
+        out.push('\n');
+    }
+
+    if !snapshot.warnings.is_empty() {
+        out.push_str("\n## Warnings\n\n");
+        push_list(&mut out, &snapshot.warnings);
+    }
+
     out
 }
 
 fn push_list(out: &mut String, items: &[String]) {
     for item in items {
         out.push_str(&format!("- {}\n", item));
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::models::RepoSnapshot;
+
+    #[test]
+    fn render_snapshot_includes_handoff_friendly_sections() {
+        let snapshot = RepoSnapshot {
+            feature: "authentication".to_string(),
+            dry_run: true,
+            branch: Some("feature/auth".to_string()),
+            status_short: " M src/auth.rs".to_string(),
+            diff_stat: " src/auth.rs | 2 ++".to_string(),
+            changed_files: vec!["src/auth.rs".to_string()],
+            recent_commits: vec!["abc123 Add auth".to_string()],
+            todos: Vec::new(),
+            warnings: vec!["possible sensitive content in .env".to_string()],
+            existing_memory: Some("# Authentication\nJWT auth is implemented.".to_string()),
+        };
+
+        let rendered = render_snapshot(&snapshot);
+
+        assert!(rendered.contains("## Changed Files"));
+        assert!(rendered.contains("## Recent Commits"));
+        assert!(rendered.contains("## Existing Feature Memory"));
+        assert!(rendered.contains("possible sensitive content"));
     }
 }

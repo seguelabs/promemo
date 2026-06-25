@@ -150,6 +150,7 @@ pub struct RepoSnapshot {
     pub recent_commits: Vec<String>,
     pub todos: Vec<TodoComment>,
     pub warnings: Vec<String>,
+    pub existing_memory: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
