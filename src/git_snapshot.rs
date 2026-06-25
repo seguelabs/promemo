@@ -17,6 +17,7 @@ pub fn collect(repo: &Path, feature: &str, dry_run: bool) -> anyhow::Result<Repo
         .collect::<Vec<_>>();
     let todos = collect_todos(repo)?;
     let warnings = secret_warnings(repo, &changed_files)?;
+    let existing_memory = existing_memory(repo, feature)?;
 
     Ok(RepoSnapshot {
         feature: feature.to_string(),
@@ -28,6 +29,7 @@ pub fn collect(repo: &Path, feature: &str, dry_run: bool) -> anyhow::Result<Repo
         recent_commits,
         todos,
         warnings,
+        existing_memory,
     })
 }
 
@@ -89,6 +91,26 @@ fn secret_warnings(repo: &Path, files: &[String]) -> anyhow::Result<Vec<String>>
     Ok(warnings)
 }
 
+fn existing_memory(repo: &Path, feature: &str) -> anyhow::Result<Option<String>> {
+    let slug = feature.trim().to_lowercase().replace(' ', "-");
+    let path = repo.join(".promem/features").join(slug).join("context.md");
+    if !path.exists() {
+        return Ok(None);
+    }
+    let data = std::fs::read_to_string(path)?;
+    let excerpt = data
+        .lines()
+        .filter(|line| !line.trim().is_empty())
+        .take(12)
+        .collect::<Vec<_>>()
+        .join("\n");
+    if excerpt.is_empty() {
+        Ok(None)
+    } else {
+        Ok(Some(excerpt))
+    }
+}
+
 fn is_ignored_dir(path: &Path) -> bool {
     path.file_name()
         .and_then(|name| name.to_str())
@@ -128,5 +150,29 @@ mod tests {
         assert!(snapshot.dry_run);
         assert_eq!(snapshot.feature, "auth");
         assert_eq!(snapshot.todos.len(), 1);
+    }
+
+    #[test]
+    fn snapshot_includes_existing_feature_memory_excerpt() {
+        let dir = tempfile::tempdir().unwrap();
+        Command::new("git")
+            .args(["init"])
+            .current_dir(dir.path())
+            .output()
+            .unwrap();
+        let feature_dir = dir.path().join(".promem/features/auth");
+        fs::create_dir_all(&feature_dir).unwrap();
+        fs::write(
+            feature_dir.join("context.md"),
+            "# Authentication\n\n## Summary\n\nJWT auth is implemented.\n",
+        )
+        .unwrap();
+
+        let snapshot = collect(dir.path(), "auth", true).unwrap();
+
+        assert!(snapshot
+            .existing_memory
+            .unwrap()
+            .contains("JWT auth is implemented"));
     }
 }
