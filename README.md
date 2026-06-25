@@ -59,6 +59,14 @@ Save structured feature memory:
 promem save-json authentication < examples/memory.json
 ```
 
+Save assistant-distilled handoff Markdown:
+
+```bash
+promem save product-direction --from examples/handoff.md
+cat examples/handoff.md | promem save product-direction --stdin
+promem import handoff examples/handoff.md --feature product-direction
+```
+
 Load prompt-ready context:
 
 ```bash
