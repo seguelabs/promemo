@@ -1,4 +1,5 @@
 use clap::{Parser, Subcommand};
+use std::path::PathBuf;
 
 #[derive(Debug, Parser)]
 #[command(name = "promem")]
@@ -13,6 +14,15 @@ pub enum Command {
     Init,
     SaveJson {
         feature: String,
+    },
+    Save {
+        feature: String,
+        #[arg(long, value_name = "FILE", conflicts_with = "stdin")]
+        from: Option<PathBuf>,
+        #[arg(long, conflicts_with = "from")]
+        stdin: bool,
+        #[arg(long)]
+        json: bool,
     },
     Load {
         feature: String,
