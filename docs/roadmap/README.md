@@ -1,7 +1,7 @@
 # Promem Roadmap
 
-This roadmap turns the full vision in `docs/vision.md` into versioned,
-shippable milestones.
+This roadmap turns the full vision in `docs/vision.md` and the memory-engine
+addendum in `docs/vision-p2.md` into versioned, shippable milestones.
 
 Each version should have a clear user-facing outcome, a small implementation
 surface, and tests that prove the release is useful on its own. Keep this
@@ -18,6 +18,14 @@ long-form product rationale.
 - [`v5.md`](v5.md): search intelligence and graph features
 - [`v6.md`](v6.md): editor and assistant integrations
 - [`v7.md`](v7.md): team workflows and external importers
+
+## Memory Engine Addendum
+
+- [`a0.md`](a0.md): smart search foundation
+- [`a1.md`](a1.md): smart context loading
+- [`a2.md`](a2.md): memory graph
+- [`a3.md`](a3.md): memory quality
+- [`a4.md`](a4.md): repo importers
 
 ## Release Rule
 
