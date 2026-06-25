@@ -1,0 +1,9 @@
+/target/
+/.promem/cache/
+/.promem/embeddings.db
+/.promem/search-index.sqlite
+.DS_Store
+*.swp
+*.swo
+*.tmp
+
