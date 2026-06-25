@@ -7,7 +7,7 @@ mod render;
 mod search;
 mod store;
 
-use anyhow::Result;
+use anyhow::{Context, Result};
 use clap::Parser;
 use cli::{Cli, Command};
 
@@ -18,7 +18,8 @@ fn main() -> Result<()> {
     match cli.command {
         Command::Init => store::init_repo(&repo)?,
         Command::SaveJson { feature } => {
-            let memory = models::MemoryInput::from_reader(std::io::stdin())?;
+            let memory = models::MemoryInput::from_reader(std::io::stdin())
+                .context("failed to read memory JSON from stdin")?;
             store::save_memory(&repo, &feature, &memory)?;
         }
         Command::Load { feature, json } => {
@@ -39,8 +40,13 @@ fn main() -> Result<()> {
                 }
             }
         }
-        Command::Tree => {
-            println!("{}", store::memory_tree(&repo)?);
+        Command::Tree { json } => {
+            let entries = store::memory_tree(&repo)?;
+            if json {
+                println!("{}", serde_json::to_string_pretty(&entries)?);
+            } else {
+                println!("{}", entries.join("\n"));
+            }
         }
         Command::Search { query, json } => {
             let matches = search::keyword_search(&repo, &query)?;

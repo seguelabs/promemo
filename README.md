@@ -38,6 +38,41 @@ promem doctor
 promem snapshot <feature> --dry-run --json
 ```
 
+## Quick Start
+
+Initialize memory for a repository:
+
+```bash
+cargo run -- init
+```
+
+Save structured feature memory:
+
+```bash
+cargo run -- save-json authentication < examples/memory.json
+```
+
+Load prompt-ready context:
+
+```bash
+cargo run -- load authentication
+```
+
+Inspect saved memory:
+
+```bash
+cargo run -- list
+cargo run -- tree --json
+cargo run -- search "refresh token"
+cargo run -- doctor --json
+```
+
+Preview repository state for a feature:
+
+```bash
+cargo run -- snapshot authentication --dry-run --json
+```
+
 ## Development
 
 Install Rust, then run:

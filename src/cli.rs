@@ -23,7 +23,10 @@ pub enum Command {
         #[arg(long)]
         json: bool,
     },
-    Tree,
+    Tree {
+        #[arg(long)]
+        json: bool,
+    },
     Search {
         query: String,
         #[arg(long)]

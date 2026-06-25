@@ -64,6 +64,13 @@ pub fn load_context(repo: &Path, feature: &str) -> anyhow::Result<LoadedContext>
     append_if_exists(&mut text, repo.join(".promem/shared/coding-guidelines.md"))?;
 
     let feature_dir = repo.join(".promem/features").join(&slug);
+    if !feature_dir.exists() {
+        bail!(
+            "feature `{}` does not exist; save it first with `promem save-json {}`",
+            slug,
+            slug
+        );
+    }
     for name in [
         "context.md",
         "architecture.md",
@@ -82,7 +89,7 @@ pub fn load_context(repo: &Path, feature: &str) -> anyhow::Result<LoadedContext>
     })
 }
 
-pub fn memory_tree(repo: &Path) -> anyhow::Result<String> {
+pub fn memory_tree(repo: &Path) -> anyhow::Result<Vec<String>> {
     ensure_initialized(repo)?;
     let root = repo.join(".promem");
     let mut entries = Vec::new();
@@ -95,7 +102,7 @@ pub fn memory_tree(repo: &Path) -> anyhow::Result<String> {
         entries.push(relative);
     }
     entries.sort();
-    Ok(entries.join("\n"))
+    Ok(entries)
 }
 
 pub fn doctor(repo: &Path) -> anyhow::Result<DoctorReport> {
