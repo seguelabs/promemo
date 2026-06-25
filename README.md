@@ -40,37 +40,43 @@ promem snapshot <feature> --dry-run --json
 
 ## Quick Start
 
+Install the CLI from a local checkout:
+
+```bash
+cargo install --path .
+```
+
 Initialize memory for a repository:
 
 ```bash
-cargo run -- init
+promem init
 ```
 
 Save structured feature memory:
 
 ```bash
-cargo run -- save-json authentication < examples/memory.json
+promem save-json authentication < examples/memory.json
 ```
 
 Load prompt-ready context:
 
 ```bash
-cargo run -- load authentication
+promem load authentication
 ```
 
 Inspect saved memory:
 
 ```bash
-cargo run -- list
-cargo run -- tree --json
-cargo run -- search "refresh token"
-cargo run -- doctor --json
+promem list
+promem tree --json
+promem search "refresh token"
+promem doctor --json
 ```
 
 Preview repository state for a feature:
 
 ```bash
-cargo run -- snapshot authentication --dry-run --json
+promem snapshot authentication --dry-run --json
 ```
 
 ## Development
@@ -81,3 +87,6 @@ Install Rust, then run:
 cargo test
 cargo run -- init
 ```
+
+`cargo run -- <command>` is the from-source development form of `promem
+<command>`.
