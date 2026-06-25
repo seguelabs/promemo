@@ -22,8 +22,8 @@ handoff prompts can be reviewed, diffed, merged, and committed like code.
 
 This repository starts with the docs-first foundation and a small single-crate
 Rust MVP. The long-form product and architecture guide lives at
-[`docs/vision.md`](docs/vision.md), and the build plan lives at
-[`docs/implementation-plan.md`](docs/implementation-plan.md).
+[`docs/vision.md`](docs/vision.md), and the versioned roadmap starts at
+[`docs/roadmap/README.md`](docs/roadmap/README.md).
 
 ## Planned CLI
 
@@ -46,4 +46,3 @@ Install Rust, then run:
 cargo test
 cargo run -- init
 ```
-
