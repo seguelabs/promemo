@@ -126,6 +126,90 @@ fn binary_commands_work_from_repo_subdirectories() {
 }
 
 #[test]
+fn binary_save_from_handoff_markdown_writes_memory_and_json_report() {
+    let dir = tempfile::tempdir().unwrap();
+    let handoff = dir.path().join("handoff.md");
+    std::fs::write(&handoff, include_str!("../examples/handoff.md")).unwrap();
+
+    let init = promem()
+        .arg("init")
+        .current_dir(dir.path())
+        .output()
+        .unwrap();
+    assert!(init.status.success());
+
+    let output = promem()
+        .args([
+            "save",
+            "product-direction",
+            "--from",
+            handoff.to_str().unwrap(),
+            "--json",
+        ])
+        .current_dir(dir.path())
+        .output()
+        .unwrap();
+
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let report: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
+    assert_eq!(report["feature"], "product-direction");
+    assert_eq!(report["title"], "Product Direction");
+    assert!(report["files_written"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|path| path == ".promem/features/product-direction/context.md"));
+
+    let loaded = promem()
+        .args(["load", "product-direction"])
+        .current_dir(dir.path())
+        .output()
+        .unwrap();
+    let text = String::from_utf8_lossy(&loaded.stdout);
+    assert!(text.contains("Use structured handoff Markdown before MCP"));
+    assert!(text.contains("Add assistant usage docs"));
+}
+
+#[test]
+fn binary_save_stdin_accepts_handoff_markdown() {
+    let dir = tempfile::tempdir().unwrap();
+    let init = promem()
+        .arg("init")
+        .current_dir(dir.path())
+        .output()
+        .unwrap();
+    assert!(init.status.success());
+
+    let mut save = promem()
+        .args(["save", "product-direction", "--stdin"])
+        .current_dir(dir.path())
+        .stdin(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .unwrap();
+    save.stdin
+        .as_mut()
+        .unwrap()
+        .write_all(include_bytes!("../examples/handoff.md"))
+        .unwrap();
+    let output = save.wait_with_output().unwrap();
+
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    assert!(dir
+        .path()
+        .join(".promem/features/product-direction/decisions.md")
+        .exists());
+}
+
+#[test]
 fn binary_reports_missing_feature() {
     let dir = tempfile::tempdir().unwrap();
     let init = promem()

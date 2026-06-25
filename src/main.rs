@@ -1,6 +1,7 @@
 mod cli;
 mod config;
 mod git_snapshot;
+mod handoff;
 mod index;
 mod models;
 mod render;
@@ -22,6 +23,28 @@ fn main() -> Result<()> {
             let memory = models::MemoryInput::from_reader(std::io::stdin())
                 .context("failed to read memory JSON from stdin")?;
             store::save_memory(&repo, &feature, &memory)?;
+        }
+        Command::Save {
+            feature,
+            from,
+            stdin,
+            json,
+        } => {
+            let repo = store::find_repo_root(&cwd)?;
+            let input = if stdin {
+                std::io::read_to_string(std::io::stdin())
+                    .context("failed to read handoff Markdown from stdin")?
+            } else if let Some(path) = from {
+                std::fs::read_to_string(&path)
+                    .with_context(|| format!("failed to read {}", path.display()))?
+            } else {
+                anyhow::bail!("provide either `--from <file>` or `--stdin`");
+            };
+            let memory = handoff::parse_markdown(&input)?;
+            let report = store::save_memory_with_report(&repo, &feature, &memory)?;
+            if json {
+                println!("{}", serde_json::to_string_pretty(&report)?);
+            }
         }
         Command::Load { feature, json } => {
             let repo = store::find_repo_root(&cwd)?;

@@ -1,6 +1,8 @@
 use crate::config::Config;
 use crate::index;
-use crate::models::{DoctorCheck, DoctorReport, FeatureEntry, LoadedContext, MemoryInput};
+use crate::models::{
+    DoctorCheck, DoctorReport, FeatureEntry, LoadedContext, MemoryInput, SaveReport,
+};
 use crate::render;
 use anyhow::{bail, Context};
 use std::fs;
@@ -45,24 +47,42 @@ pub fn init_repo(repo: &Path) -> anyhow::Result<()> {
 }
 
 pub fn save_memory(repo: &Path, feature: &str, memory: &MemoryInput) -> anyhow::Result<()> {
+    save_memory_with_report(repo, feature, memory).map(|_| ())
+}
+
+pub fn save_memory_with_report(
+    repo: &Path,
+    feature: &str,
+    memory: &MemoryInput,
+) -> anyhow::Result<SaveReport> {
     ensure_initialized(repo)?;
     let slug = normalize_feature(feature)?;
     let feature_dir = repo.join(".promem/features").join(&slug);
     fs::create_dir_all(&feature_dir)?;
+    let mut files_written = Vec::new();
 
     for (name, contents) in render::render_feature_files(memory) {
-        fs::write(feature_dir.join(name), contents)?;
+        let path = feature_dir.join(name);
+        fs::write(&path, contents)?;
+        files_written.push(path.strip_prefix(repo)?.display().to_string());
     }
 
     index::upsert_feature(
         repo,
         FeatureEntry {
-            name: slug,
+            name: slug.clone(),
             title: memory.title.clone(),
             summary: memory.summary.clone(),
         },
     )?;
-    Ok(())
+    files_written.push(".promem/index.json".to_string());
+    files_written.sort();
+    Ok(SaveReport {
+        feature: slug,
+        title: memory.title.clone(),
+        files_written,
+        warnings: Vec::new(),
+    })
 }
 
 pub fn load_context(repo: &Path, feature: &str) -> anyhow::Result<LoadedContext> {
