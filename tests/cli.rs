@@ -210,6 +210,45 @@ fn binary_save_stdin_accepts_handoff_markdown() {
 }
 
 #[test]
+fn binary_import_handoff_reuses_handoff_save_path() {
+    let dir = tempfile::tempdir().unwrap();
+    let handoff = dir.path().join("handoff.md");
+    std::fs::write(&handoff, include_str!("../examples/handoff.md")).unwrap();
+
+    let init = promem()
+        .arg("init")
+        .current_dir(dir.path())
+        .output()
+        .unwrap();
+    assert!(init.status.success());
+
+    let output = promem()
+        .args([
+            "import",
+            "handoff",
+            handoff.to_str().unwrap(),
+            "--feature",
+            "product-direction",
+            "--json",
+        ])
+        .current_dir(dir.path())
+        .output()
+        .unwrap();
+
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let report: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
+    assert_eq!(report["feature"], "product-direction");
+    assert!(dir
+        .path()
+        .join(".promem/features/product-direction/todos.md")
+        .exists());
+}
+
+#[test]
 fn binary_reports_missing_feature() {
     let dir = tempfile::tempdir().unwrap();
     let init = promem()
