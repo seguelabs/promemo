@@ -13,16 +13,18 @@ use cli::{Cli, Command};
 
 fn main() -> Result<()> {
     let cli = Cli::parse();
-    let repo = std::env::current_dir()?;
+    let cwd = std::env::current_dir()?;
 
     match cli.command {
-        Command::Init => store::init_repo(&repo)?,
+        Command::Init => store::init_repo(&cwd)?,
         Command::SaveJson { feature } => {
+            let repo = store::find_repo_root(&cwd)?;
             let memory = models::MemoryInput::from_reader(std::io::stdin())
                 .context("failed to read memory JSON from stdin")?;
             store::save_memory(&repo, &feature, &memory)?;
         }
         Command::Load { feature, json } => {
+            let repo = store::find_repo_root(&cwd)?;
             let context = store::load_context(&repo, &feature)?;
             if json {
                 println!("{}", serde_json::to_string_pretty(&context)?);
@@ -31,6 +33,7 @@ fn main() -> Result<()> {
             }
         }
         Command::List { json } => {
+            let repo = store::find_repo_root(&cwd)?;
             let features = index::load_features(&repo)?;
             if json {
                 println!("{}", serde_json::to_string_pretty(&features)?);
@@ -41,6 +44,7 @@ fn main() -> Result<()> {
             }
         }
         Command::Tree { json } => {
+            let repo = store::find_repo_root(&cwd)?;
             let entries = store::memory_tree(&repo)?;
             if json {
                 println!("{}", serde_json::to_string_pretty(&entries)?);
@@ -49,6 +53,7 @@ fn main() -> Result<()> {
             }
         }
         Command::Search { query, json } => {
+            let repo = store::find_repo_root(&cwd)?;
             let matches = search::keyword_search(&repo, &query)?;
             if json {
                 println!("{}", serde_json::to_string_pretty(&matches)?);
@@ -59,6 +64,7 @@ fn main() -> Result<()> {
             }
         }
         Command::Doctor { json } => {
+            let repo = store::find_repo_root(&cwd)?;
             let report = store::doctor(&repo)?;
             if json {
                 println!("{}", serde_json::to_string_pretty(&report)?);
@@ -73,6 +79,7 @@ fn main() -> Result<()> {
             dry_run,
             json,
         } => {
+            let repo = store::find_repo_root(&cwd)?;
             let snapshot = git_snapshot::collect(&repo, &feature, dry_run)?;
             if json {
                 println!("{}", serde_json::to_string_pretty(&snapshot)?);
