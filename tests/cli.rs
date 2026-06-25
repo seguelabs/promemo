@@ -76,6 +76,56 @@ fn binary_saves_lists_loads_searches_and_outputs_tree_json() {
 }
 
 #[test]
+fn binary_commands_work_from_repo_subdirectories() {
+    let dir = tempfile::tempdir().unwrap();
+    let nested = dir.path().join("src/auth");
+    std::fs::create_dir_all(&nested).unwrap();
+
+    let init = promem()
+        .arg("init")
+        .current_dir(dir.path())
+        .output()
+        .unwrap();
+    assert!(
+        init.status.success(),
+        "{}",
+        String::from_utf8_lossy(&init.stderr)
+    );
+
+    let mut save = promem()
+        .args(["save-json", "authentication"])
+        .current_dir(&nested)
+        .stdin(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .unwrap();
+    save.stdin
+        .as_mut()
+        .unwrap()
+        .write_all(include_bytes!("../examples/memory.json"))
+        .unwrap();
+    let save_output = save.wait_with_output().unwrap();
+    assert!(
+        save_output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&save_output.stderr)
+    );
+
+    assert!(dir
+        .path()
+        .join(".promem/features/authentication/context.md")
+        .exists());
+
+    let load = promem()
+        .args(["load", "authentication"])
+        .current_dir(&nested)
+        .output()
+        .unwrap();
+    assert!(load.status.success());
+    assert!(String::from_utf8_lossy(&load.stdout).contains("# Authentication"));
+}
+
+#[test]
 fn binary_reports_missing_feature() {
     let dir = tempfile::tempdir().unwrap();
     let init = promem()

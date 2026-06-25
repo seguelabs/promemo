@@ -7,6 +7,16 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use walkdir::WalkDir;
 
+pub fn find_repo_root(start: &Path) -> anyhow::Result<PathBuf> {
+    for candidate in start.ancestors() {
+        if candidate.join(".promem").is_dir() {
+            return Ok(candidate.to_path_buf());
+        }
+    }
+
+    bail!("not a Promem repository; run `promem init` from the repository root first");
+}
+
 pub fn init_repo(repo: &Path) -> anyhow::Result<()> {
     let root = repo.join(".promem");
     fs::create_dir_all(root.join("features"))?;
@@ -179,6 +189,18 @@ mod tests {
         assert!(dir.path().join(".promem/index.json").exists());
         assert!(dir.path().join(".promem/features").exists());
         assert!(dir.path().join(".promem/shared").exists());
+    }
+
+    #[test]
+    fn find_repo_root_walks_up_from_subdirectories() {
+        let dir = tempfile::tempdir().unwrap();
+        init_repo(dir.path()).unwrap();
+        let nested = dir.path().join("src/auth");
+        fs::create_dir_all(&nested).unwrap();
+
+        let root = find_repo_root(&nested).unwrap();
+
+        assert_eq!(root, dir.path());
     }
 
     #[test]
