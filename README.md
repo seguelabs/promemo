@@ -22,7 +22,8 @@ handoff prompts can be reviewed, diffed, merged, and committed like code.
 
 This repository starts with the docs-first foundation and a small single-crate
 Rust MVP. The long-form product and architecture guide lives at
-[`docs/vision.md`](docs/vision.md), and the versioned roadmap starts at
+[`docs/vision.md`](docs/vision.md), the memory-engine addendum lives at
+[`docs/vision-p2.md`](docs/vision-p2.md), and the versioned roadmap starts at
 [`docs/roadmap/README.md`](docs/roadmap/README.md).
 
 ## Planned CLI
