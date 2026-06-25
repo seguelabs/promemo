@@ -10,7 +10,7 @@ mod store;
 
 use anyhow::{Context, Result};
 use clap::Parser;
-use cli::{Cli, Command};
+use cli::{Cli, Command, ImportCommand};
 
 fn main() -> Result<()> {
     let cli = Cli::parse();
@@ -40,6 +40,23 @@ fn main() -> Result<()> {
             } else {
                 anyhow::bail!("provide either `--from <file>` or `--stdin`");
             };
+            let memory = handoff::parse_markdown(&input)?;
+            let report = store::save_memory_with_report(&repo, &feature, &memory)?;
+            if json {
+                println!("{}", serde_json::to_string_pretty(&report)?);
+            }
+        }
+        Command::Import {
+            command:
+                ImportCommand::Handoff {
+                    file,
+                    feature,
+                    json,
+                },
+        } => {
+            let repo = store::find_repo_root(&cwd)?;
+            let input = std::fs::read_to_string(&file)
+                .with_context(|| format!("failed to read {}", file.display()))?;
             let memory = handoff::parse_markdown(&input)?;
             let report = store::save_memory_with_report(&repo, &feature, &memory)?;
             if json {

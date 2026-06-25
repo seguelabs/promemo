@@ -24,6 +24,10 @@ pub enum Command {
         #[arg(long)]
         json: bool,
     },
+    Import {
+        #[command(subcommand)]
+        command: ImportCommand,
+    },
     Load {
         feature: String,
         #[arg(long)]
@@ -50,6 +54,17 @@ pub enum Command {
         feature: String,
         #[arg(long)]
         dry_run: bool,
+        #[arg(long)]
+        json: bool,
+    },
+}
+
+#[derive(Debug, Subcommand)]
+pub enum ImportCommand {
+    Handoff {
+        file: PathBuf,
+        #[arg(long)]
+        feature: String,
         #[arg(long)]
         json: bool,
     },
