@@ -193,10 +193,28 @@ pub fn render_snapshot(snapshot: &RepoSnapshot) -> String {
         out.push_str(&snapshot.status_short);
         out.push_str("\n```\n");
     }
+    if !snapshot.changed_files.is_empty() {
+        out.push_str("\n## Changed Files\n\n");
+        push_list(&mut out, &snapshot.changed_files);
+    }
     if !snapshot.diff_stat.is_empty() {
         out.push_str("\n## Diff Stat\n\n```txt\n");
         out.push_str(&snapshot.diff_stat);
         out.push_str("\n```\n");
+    }
+    if !snapshot.recent_commits.is_empty() {
+        out.push_str("\n## Recent Commits\n\n");
+        push_list(&mut out, &snapshot.recent_commits);
+    }
+    if !snapshot.todos.is_empty() {
+        out.push_str("\n## TODO/FIXME Comments\n\n");
+        for item in &snapshot.todos {
+            out.push_str(&format!("- {}:{}: {}\n", item.path, item.line, item.text));
+        }
+    }
+    if !snapshot.existing_memory.is_empty() {
+        out.push_str("\n## Existing Feature Memory\n\n");
+        push_list(&mut out, &snapshot.existing_memory);
     }
     if !snapshot.warnings.is_empty() {
         out.push_str("\n## Warnings\n\n");

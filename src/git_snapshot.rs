@@ -6,16 +6,13 @@ use std::process::Command;
 pub fn collect(repo: &Path, feature: &str, dry_run: bool) -> anyhow::Result<RepoSnapshot> {
     let mut warnings = Vec::new();
     let status_short = git(repo, &["status", "--short"], &mut warnings)?;
-    let changed_files = git(repo, &["diff", "--name-only"], &mut warnings)?
-        .lines()
-        .map(str::to_string)
-        .filter(|line| !line.is_empty())
-        .collect::<Vec<_>>();
+    let changed_files = changed_files(repo, &status_short, &mut warnings)?;
     let recent_commits = git(repo, &["log", "--oneline", "-5"], &mut warnings)?
         .lines()
         .map(str::to_string)
         .collect::<Vec<_>>();
     let todos = collect_todos(repo)?;
+    let existing_memory = collect_existing_memory(repo, feature)?;
     warnings.extend(secret_warnings(repo, &changed_files)?);
 
     Ok(RepoSnapshot {
@@ -27,6 +24,7 @@ pub fn collect(repo: &Path, feature: &str, dry_run: bool) -> anyhow::Result<Repo
         changed_files,
         recent_commits,
         todos,
+        existing_memory,
         warnings,
     })
 }
@@ -38,6 +36,38 @@ fn current_branch(repo: &Path, warnings: &mut Vec<String>) -> anyhow::Result<Opt
         Ok(None)
     } else {
         Ok(Some(branch.to_string()))
+    }
+}
+
+fn changed_files(
+    repo: &Path,
+    status_short: &str,
+    warnings: &mut Vec<String>,
+) -> anyhow::Result<Vec<String>> {
+    let mut files = git(repo, &["diff", "--name-only"], warnings)?
+        .lines()
+        .map(str::to_string)
+        .filter(|line| !line.is_empty())
+        .collect::<Vec<_>>();
+
+    for line in status_short.lines() {
+        if let Some(path) = status_path(line) {
+            if !files.contains(&path) {
+                files.push(path);
+            }
+        }
+    }
+    files.sort();
+    Ok(files)
+}
+
+fn status_path(line: &str) -> Option<String> {
+    let path = line.get(3..)?.trim();
+    let path = path.split(" -> ").last().unwrap_or(path).trim();
+    if path.is_empty() {
+        None
+    } else {
+        Some(path.to_string())
     }
 }
 
@@ -93,6 +123,36 @@ fn secret_warnings(repo: &Path, files: &[String]) -> anyhow::Result<Vec<String>>
         }
     }
     Ok(warnings)
+}
+
+fn collect_existing_memory(repo: &Path, feature: &str) -> anyhow::Result<Vec<String>> {
+    let feature_dir = repo
+        .join(".promem/features")
+        .join(normalize_feature(feature));
+    let mut entries = Vec::new();
+    if !feature_dir.exists() {
+        return Ok(entries);
+    }
+
+    for entry in WalkBuilder::new(&feature_dir)
+        .hidden(false)
+        .build()
+        .filter_map(Result::ok)
+        .filter(|entry| {
+            entry
+                .file_type()
+                .map(|kind| kind.is_file())
+                .unwrap_or(false)
+        })
+    {
+        entries.push(entry.path().strip_prefix(repo)?.display().to_string());
+    }
+    entries.sort();
+    Ok(entries)
+}
+
+fn normalize_feature(feature: &str) -> String {
+    feature.trim().to_lowercase().replace(' ', "-")
 }
 
 fn is_ignored_dir(path: &Path) -> bool {
