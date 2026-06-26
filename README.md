@@ -8,12 +8,31 @@ Promem keeps durable project memory as Markdown inside the repository, under
 `.promem/`, so important architecture notes, decisions, APIs, TODOs, and
 handoff prompts can be reviewed, diffed, merged, and committed like code.
 
+Each feature gets a canonical `.promem/features/<feature>/memory.md` file.
+Promem renders that file in a round-trip-friendly Markdown schema and can parse
+reasonable human edits back into structured memory. The sibling files such as
+`context.md`, `decisions.md`, and `api.md` are browsable generated views.
+
+Promem-owned content is wrapped in generated-region markers:
+
+```md
+<!-- promem:generated:start -->
+...
+<!-- promem:generated:end -->
+```
+
+Content outside those markers is preserved. For free-form feature notes, use
+`.promem/features/<feature>/notes.md`; Promem creates it but does not overwrite
+it.
+
 ## Local-First Promise
 
 - Rust CLI first.
 - No hosted backend required.
 - No raw transcript storage.
 - Markdown is the durable source of truth.
+- Markdown should remain human-editable: Promem parses loose input and renders a
+  canonical format.
 - JSON stdin/stdout contracts make automation possible without coupling the
   core tool to a specific assistant.
 - Generated caches and indexes stay out of Git.
