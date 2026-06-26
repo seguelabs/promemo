@@ -108,6 +108,14 @@ pub struct FeatureEntry {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SaveReport {
+    pub feature: String,
+    pub title: String,
+    pub files_written: Vec<String>,
+    pub warnings: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LoadedContext {
     pub feature: String,
     pub text: String,
