@@ -1,6 +1,6 @@
 use crate::models::{
-    ArchitectureNote, CurrentState, Decision, DecisionStatus, FileReference, MemoryInput,
-    PromptItem, TodoItem,
+    ApiItem, ArchitectureNote, CurrentState, DataModelItem, Decision, DecisionStatus,
+    FileReference, MemoryInput, PromptItem, TodoItem,
 };
 use anyhow::{bail, Context};
 
@@ -11,6 +11,8 @@ enum Section {
     CurrentState,
     Decisions,
     Architecture,
+    Api,
+    DataModel,
     Files,
     Todos,
     OpenQuestions,
@@ -56,7 +58,7 @@ pub fn parse_markdown(input: &str) -> anyhow::Result<MemoryInput> {
 
     for raw_line in input.lines() {
         let line = raw_line.trim();
-        if line.is_empty() {
+        if line.is_empty() || line.starts_with("<!--") {
             continue;
         }
 
@@ -78,6 +80,8 @@ pub fn parse_markdown(input: &str) -> anyhow::Result<MemoryInput> {
                 "current state" => Section::CurrentState,
                 "decisions" => Section::Decisions,
                 "architecture" => Section::Architecture,
+                "api" => Section::Api,
+                "data model" | "data-model" | "data models" => Section::DataModel,
                 "files" => Section::Files,
                 "todos" | "todo" | "tasks" => Section::Todos,
                 "open questions" => Section::OpenQuestions,
@@ -86,6 +90,11 @@ pub fn parse_markdown(input: &str) -> anyhow::Result<MemoryInput> {
                 _ => Section::None,
             };
             current_state_part = CurrentStatePart::Implemented;
+            continue;
+        }
+
+        if let Some(title) = line.strip_prefix("#### ") {
+            let _ = title;
             continue;
         }
 
@@ -116,6 +125,13 @@ pub fn parse_markdown(input: &str) -> anyhow::Result<MemoryInput> {
                     finish_prompt(&mut memory, &mut prompts_title, &mut prompts_lines);
                     prompts_title = Some(title.trim().to_string());
                 }
+                Section::Todos | Section::OpenQuestions | Section::FutureWork => {
+                    section = match normalize_heading(title).as_str() {
+                        "open questions" => Section::OpenQuestions,
+                        "future work" => Section::FutureWork,
+                        _ => Section::Todos,
+                    };
+                }
                 _ => {}
             }
             continue;
@@ -143,6 +159,27 @@ pub fn parse_markdown(input: &str) -> anyhow::Result<MemoryInput> {
                 }
                 architecture_lines.push(line.to_string());
             }
+            Section::Api => {
+                if let Some(item) = strip_bullet(line) {
+                    let (endpoint, description) = split_label(item);
+                    let mut parts = endpoint.splitn(2, char::is_whitespace);
+                    let method = parts.next().unwrap_or_default().trim().to_string();
+                    let path = parts.next().unwrap_or_default().trim().to_string();
+                    if !method.is_empty() && !path.is_empty() {
+                        memory.api.push(ApiItem {
+                            method,
+                            path,
+                            description,
+                        });
+                    }
+                }
+            }
+            Section::DataModel => {
+                if let Some(item) = strip_bullet(line) {
+                    let (name, description) = split_label(item);
+                    memory.data_model.push(DataModelItem { name, description });
+                }
+            }
             Section::Files => {
                 if let Some(item) = strip_bullet(line) {
                     let (path, reason) = split_label(item);
@@ -151,10 +188,8 @@ pub fn parse_markdown(input: &str) -> anyhow::Result<MemoryInput> {
             }
             Section::Todos => {
                 if let Some(item) = strip_bullet(line) {
-                    memory.todos.push(TodoItem {
-                        text: item.to_string(),
-                        priority: "normal".to_string(),
-                    });
+                    let (priority, text) = parse_todo_item(item);
+                    memory.todos.push(TodoItem { text, priority });
                 }
             }
             Section::OpenQuestions => {
@@ -203,11 +238,21 @@ fn parse_decision_line(
     let decision = current_decision
         .as_mut()
         .context("decision details must appear under a `### Decision title` heading")?;
-    if let Some(reason) = line.strip_prefix("Reason:") {
-        decision.reason = Some(reason.trim().to_string());
-    } else if let Some(status) = line.strip_prefix("Status:") {
-        decision.status = Some(parse_status(status.trim())?);
-    } else if let Some(tradeoff) = strip_bullet(line) {
+    if let Some((label, value)) = line.split_once(':') {
+        match label.trim().to_lowercase().as_str() {
+            "reason" => {
+                decision.reason = Some(value.trim().to_string());
+                return Ok(());
+            }
+            "status" => {
+                decision.status = Some(parse_status(value.trim())?);
+                return Ok(());
+            }
+            _ => {}
+        }
+    }
+
+    if let Some(tradeoff) = strip_bullet(line) {
         decision.tradeoffs.push(tradeoff.to_string());
     } else if let Some(reason) = &mut decision.reason {
         reason.push('\n');
@@ -219,6 +264,7 @@ fn parse_decision_line(
 }
 
 fn parse_status(status: &str) -> anyhow::Result<DecisionStatus> {
+    let status = status.trim().trim_matches('`');
     match status.to_lowercase().replace('-', "_").as_str() {
         "proposed" => Ok(DecisionStatus::Proposed),
         "accepted" => Ok(DecisionStatus::Accepted),
@@ -280,9 +326,23 @@ fn split_label(item: &str) -> (String, String) {
     }
 }
 
+fn parse_todo_item(item: &str) -> (String, String) {
+    if let Some(rest) = item.strip_prefix('[') {
+        if let Some((priority, text)) = rest.split_once(']') {
+            return (
+                priority.trim().to_string(),
+                text.trim_start().trim().to_string(),
+            );
+        }
+    }
+    ("normal".to_string(), item.to_string())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::models::{ApiItem, DataModelItem};
+    use crate::render;
 
     #[test]
     fn parses_structured_handoff_markdown() {
@@ -328,5 +388,102 @@ Status: accepted
             memory.open_questions[0],
             "Should refresh tokens be device-scoped?"
         );
+    }
+
+    #[test]
+    fn parses_canonical_generated_markdown_back_into_memory() {
+        let original = MemoryInput {
+            title: "Authentication".to_string(),
+            summary: "Authentication supports JWT access tokens.".to_string(),
+            current_state: Some(CurrentState {
+                implemented: vec!["Email login".to_string()],
+                pending: vec!["MFA".to_string()],
+            }),
+            architecture: vec![ArchitectureNote {
+                title: "Token validation".to_string(),
+                details: "Protected routes validate access tokens.".to_string(),
+            }],
+            decisions: vec![Decision {
+                title: "Use JWT access tokens".to_string(),
+                reason: Some("Keeps API requests stateless.".to_string()),
+                tradeoffs: vec!["Harder immediate revocation".to_string()],
+                status: DecisionStatus::Accepted,
+            }],
+            api: vec![ApiItem {
+                method: "POST".to_string(),
+                path: "/auth/login".to_string(),
+                description: "Authenticates a user.".to_string(),
+            }],
+            data_model: vec![DataModelItem {
+                name: "refresh_tokens".to_string(),
+                description: "Stores hashed refresh tokens.".to_string(),
+            }],
+            todos: vec![TodoItem {
+                text: "Add MFA enrollment.".to_string(),
+                priority: "high".to_string(),
+            }],
+            open_questions: vec!["Should refresh tokens be device-scoped?".to_string()],
+            future_work: vec!["Support passkeys.".to_string()],
+            prompts: vec![PromptItem {
+                title: "Auth risk review".to_string(),
+                prompt: "Review token logic.".to_string(),
+            }],
+            files: vec![FileReference {
+                path: "src/auth.rs".to_string(),
+                reason: "Auth entrypoint.".to_string(),
+            }],
+        };
+
+        let markdown = render::memory_markdown(&original);
+        let parsed = parse_markdown(&markdown).unwrap();
+
+        assert_eq!(parsed.title, original.title);
+        assert_eq!(parsed.summary, original.summary);
+        assert_eq!(parsed.decisions[0].status, DecisionStatus::Accepted);
+        assert_eq!(parsed.api[0].path, "/auth/login");
+        assert_eq!(parsed.data_model[0].name, "refresh_tokens");
+        assert_eq!(parsed.todos[0].priority, "high");
+        assert_eq!(parsed.open_questions, original.open_questions);
+        assert_eq!(parsed.future_work, original.future_work);
+    }
+
+    #[test]
+    fn tolerates_human_edited_markdown_variants() {
+        let memory = parse_markdown(
+            r#"# Authentication
+
+<!-- promem:generated:start -->
+
+## Summary
+Auth notes.
+
+## Decisions
+### Use JWT Tokens
+status: `Accepted`
+Reason:
+They keep requests stateless.
+
+#### Tradeoffs
+* Harder revocation
+
+## TODOs
+### Tasks
+- [high] Add MFA.
+### Open Questions
+* Should tokens be device-scoped?
+<!-- promem:generated:end -->
+"#,
+        )
+        .unwrap();
+
+        assert_eq!(memory.decisions[0].title, "Use JWT Tokens");
+        assert_eq!(memory.decisions[0].status, DecisionStatus::Accepted);
+        assert!(memory.decisions[0]
+            .reason
+            .as_ref()
+            .unwrap()
+            .contains("stateless"));
+        assert_eq!(memory.todos[0].priority, "high");
+        assert_eq!(memory.open_questions[0], "Should tokens be device-scoped?");
     }
 }
