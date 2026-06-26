@@ -1,7 +1,7 @@
 use crate::models::SearchMatch;
+use ignore::WalkBuilder;
 use std::fs;
 use std::path::Path;
-use walkdir::WalkDir;
 
 pub fn keyword_search(repo: &Path, query: &str) -> anyhow::Result<Vec<SearchMatch>> {
     let needle = query.to_lowercase();
@@ -11,10 +11,16 @@ pub fn keyword_search(repo: &Path, query: &str) -> anyhow::Result<Vec<SearchMatc
         return Ok(matches);
     }
 
-    for entry in WalkDir::new(&root)
-        .into_iter()
+    for entry in WalkBuilder::new(&root)
+        .hidden(false)
+        .build()
         .filter_map(Result::ok)
-        .filter(|entry| entry.path().is_file())
+        .filter(|entry| {
+            entry
+                .file_type()
+                .map(|kind| kind.is_file())
+                .unwrap_or(false)
+        })
     {
         let path = entry.path();
         if path.extension().and_then(|value| value.to_str()) != Some("md") {
@@ -57,7 +63,7 @@ mod tests {
 
         let matches = keyword_search(dir.path(), "refresh").unwrap();
 
-        assert_eq!(matches.len(), 1);
+        assert_eq!(matches.len(), 2);
         assert!(matches[0].snippet.contains("refresh tokens"));
     }
 }
