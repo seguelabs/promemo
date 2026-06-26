@@ -2,6 +2,7 @@ use crate::models::{MemoryInput, RepoSnapshot};
 
 pub fn render_feature_files(memory: &MemoryInput) -> Vec<(&'static str, String)> {
     vec![
+        ("memory.md", memory_markdown(memory)),
         ("context.md", context(memory)),
         ("architecture.md", architecture(memory)),
         ("decisions.md", decisions(memory)),
@@ -11,6 +12,75 @@ pub fn render_feature_files(memory: &MemoryInput) -> Vec<(&'static str, String)>
         ("changelog.md", changelog(memory)),
         ("prompts.md", prompts(memory)),
     ]
+}
+
+pub fn memory_markdown(memory: &MemoryInput) -> String {
+    let mut out = context(memory);
+    if !memory.architecture.is_empty() {
+        out.push_str("\n## Architecture\n");
+        for item in &memory.architecture {
+            out.push_str(&format!("\n### {}\n\n{}\n", item.title, item.details));
+        }
+    }
+    if !memory.decisions.is_empty() {
+        out.push_str("\n## Decisions\n");
+        for item in &memory.decisions {
+            out.push_str(&format!(
+                "\n### {}\nStatus: {}\n",
+                item.title,
+                decision_status(&item.status)
+            ));
+            if let Some(reason) = &item.reason {
+                out.push_str(&format!("Reason: {}\n", reason));
+            }
+            if !item.tradeoffs.is_empty() {
+                out.push('\n');
+                push_list(&mut out, &item.tradeoffs);
+            }
+        }
+    }
+    if !memory.api.is_empty() {
+        out.push_str("\n## API\n\n");
+        for item in &memory.api {
+            out.push_str(&format!(
+                "- {} {}: {}\n",
+                item.method, item.path, item.description
+            ));
+        }
+    }
+    if !memory.data_model.is_empty() {
+        out.push_str("\n## Data Model\n\n");
+        for item in &memory.data_model {
+            out.push_str(&format!("- {}: {}\n", item.name, item.description));
+        }
+    }
+    if !memory.todos.is_empty()
+        || !memory.open_questions.is_empty()
+        || !memory.future_work.is_empty()
+    {
+        out.push_str("\n## TODOs\n");
+        if !memory.todos.is_empty() {
+            out.push_str("\n### Tasks\n\n");
+            for item in &memory.todos {
+                out.push_str(&format!("- [{}] {}\n", item.priority, item.text));
+            }
+        }
+        if !memory.open_questions.is_empty() {
+            out.push_str("\n### Open Questions\n\n");
+            push_list(&mut out, &memory.open_questions);
+        }
+        if !memory.future_work.is_empty() {
+            out.push_str("\n### Future Work\n\n");
+            push_list(&mut out, &memory.future_work);
+        }
+    }
+    if !memory.prompts.is_empty() {
+        out.push_str("\n## Prompts\n");
+        for item in &memory.prompts {
+            out.push_str(&format!("\n### {}\n\n{}\n", item.title, item.prompt));
+        }
+    }
+    out
 }
 
 pub fn context(memory: &MemoryInput) -> String {
@@ -47,8 +117,9 @@ fn decisions(memory: &MemoryInput) -> String {
     let mut out = format!("# {} Decisions\n", memory.title);
     for item in &memory.decisions {
         out.push_str(&format!(
-            "\n## {}\n\nStatus: `{:?}`\n",
-            item.title, item.status
+            "\n## {}\n\nStatus: `{}`\n",
+            item.title,
+            decision_status(&item.status)
         ));
         if let Some(reason) = &item.reason {
             out.push_str(&format!("\n{}\n", reason));
@@ -127,11 +198,23 @@ pub fn render_snapshot(snapshot: &RepoSnapshot) -> String {
         out.push_str(&snapshot.diff_stat);
         out.push_str("\n```\n");
     }
+    if !snapshot.warnings.is_empty() {
+        out.push_str("\n## Warnings\n\n");
+        push_list(&mut out, &snapshot.warnings);
+    }
     out
 }
 
 fn push_list(out: &mut String, items: &[String]) {
     for item in items {
         out.push_str(&format!("- {}\n", item));
+    }
+}
+
+fn decision_status(status: &crate::models::DecisionStatus) -> &'static str {
+    match status {
+        crate::models::DecisionStatus::Proposed => "proposed",
+        crate::models::DecisionStatus::Accepted => "accepted",
+        crate::models::DecisionStatus::Deprecated => "deprecated",
     }
 }
