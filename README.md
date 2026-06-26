@@ -78,6 +78,31 @@ Save structured feature memory:
 promem save-json authentication < examples/memory.json
 ```
 
+Review the generated memory files:
+
+```bash
+promem tree
+```
+
+The canonical feature memory lives at:
+
+```txt
+.promem/features/authentication/memory.md
+```
+
+Promem also writes browsable generated views such as `context.md`,
+`decisions.md`, and `todos.md`. Free-form human notes belong in:
+
+```txt
+.promem/features/authentication/notes.md
+```
+
+Save assistant-distilled handoff Markdown without writing JSON:
+
+```bash
+promem save product-direction --from examples/handoff.md
+```
+
 Load prompt-ready context:
 
 ```bash
