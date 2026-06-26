@@ -1,4 +1,4 @@
-use crate::cli::{Cli, Command};
+use crate::cli::{Cli, Command, ImportCommand};
 use crate::{git_snapshot, handoff, index, models, render, search, store};
 use anyhow::{Context, Result};
 use std::io::{Read, Write};
@@ -29,20 +29,7 @@ pub fn run_with_io(
             json,
         } => {
             let repo = store::find_repo_root(cwd)?;
-            let input = if use_stdin {
-                let mut input = String::new();
-                stdin
-                    .read_to_string(&mut input)
-                    .context("failed to read handoff Markdown from stdin")?;
-                input
-            } else if let Some(path) = from {
-                std::fs::read_to_string(&path)
-                    .with_context(|| format!("failed to read {}", path.display()))?
-            } else {
-                anyhow::bail!("provide either `--from <file>` or `--stdin`");
-            };
-            let memory = handoff::parse_markdown(&input)?;
-            let report = store::save_memory_with_report(&repo, &feature, &memory)?;
+            let report = save_handoff(&repo, &feature, from.as_deref(), use_stdin, stdin)?;
             if json {
                 writeln!(stdout, "{}", serde_json::to_string_pretty(&report)?)?;
             }
@@ -116,7 +103,43 @@ pub fn run_with_io(
                 writeln!(stdout, "{}", render::render_snapshot(&snapshot))?;
             }
         }
+        Command::Import { command } => match command {
+            ImportCommand::Handoff {
+                file,
+                feature,
+                json,
+            } => {
+                let repo = store::find_repo_root(cwd)?;
+                let report = save_handoff(&repo, &feature, Some(&file), false, stdin)?;
+                if json {
+                    writeln!(stdout, "{}", serde_json::to_string_pretty(&report)?)?;
+                }
+            }
+        },
     }
 
     Ok(())
+}
+
+fn save_handoff(
+    repo: &Path,
+    feature: &str,
+    from: Option<&Path>,
+    use_stdin: bool,
+    stdin: &mut impl Read,
+) -> Result<models::SaveReport> {
+    let input = if use_stdin {
+        let mut input = String::new();
+        stdin
+            .read_to_string(&mut input)
+            .context("failed to read handoff Markdown from stdin")?;
+        input
+    } else if let Some(path) = from {
+        std::fs::read_to_string(path)
+            .with_context(|| format!("failed to read {}", path.display()))?
+    } else {
+        anyhow::bail!("provide either `--from <file>` or `--stdin`");
+    };
+    let memory = handoff::parse_markdown(&input)?;
+    store::save_memory_with_report(repo, feature, &memory)
 }

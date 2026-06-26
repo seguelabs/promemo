@@ -53,4 +53,19 @@ pub enum Command {
         #[arg(long)]
         json: bool,
     },
+    Import {
+        #[command(subcommand)]
+        command: ImportCommand,
+    },
+}
+
+#[derive(Debug, Subcommand)]
+pub enum ImportCommand {
+    Handoff {
+        file: PathBuf,
+        #[arg(long)]
+        feature: String,
+        #[arg(long)]
+        json: bool,
+    },
 }

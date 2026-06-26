@@ -149,6 +149,7 @@ pub struct RepoSnapshot {
     pub changed_files: Vec<String>,
     pub recent_commits: Vec<String>,
     pub todos: Vec<TodoComment>,
+    pub existing_memory: Vec<String>,
     pub warnings: Vec<String>,
 }
 
