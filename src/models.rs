@@ -55,7 +55,7 @@ pub struct Decision {
     pub status: DecisionStatus,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum DecisionStatus {
     Proposed,
@@ -108,6 +108,14 @@ pub struct FeatureEntry {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SaveReport {
+    pub feature: String,
+    pub title: String,
+    pub files_written: Vec<String>,
+    pub warnings: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LoadedContext {
     pub feature: String,
     pub text: String,
@@ -141,6 +149,7 @@ pub struct RepoSnapshot {
     pub changed_files: Vec<String>,
     pub recent_commits: Vec<String>,
     pub todos: Vec<TodoComment>,
+    pub existing_memory: Vec<String>,
     pub warnings: Vec<String>,
 }
 

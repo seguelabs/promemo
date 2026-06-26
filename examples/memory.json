@@ -1,0 +1,68 @@
+{
+  "title": "Authentication",
+  "summary": "Authentication supports email login, JWT access tokens, and planned MFA.",
+  "current_state": {
+    "implemented": [
+      "Email login",
+      "JWT access tokens"
+    ],
+    "pending": [
+      "MFA",
+      "Password reset"
+    ]
+  },
+  "architecture": [
+    {
+      "title": "Token validation",
+      "details": "Protected routes validate short-lived JWT access tokens before running handlers."
+    }
+  ],
+  "decisions": [
+    {
+      "title": "Use JWT access tokens",
+      "reason": "Keeps API requests stateless and easier to scale horizontally.",
+      "tradeoffs": [
+        "Harder immediate revocation",
+        "Requires careful refresh token rotation"
+      ],
+      "status": "accepted"
+    }
+  ],
+  "api": [
+    {
+      "method": "POST",
+      "path": "/auth/login",
+      "description": "Authenticates a user and returns access and refresh tokens."
+    }
+  ],
+  "data_model": [
+    {
+      "name": "refresh_tokens",
+      "description": "Stores hashed refresh tokens and rotation metadata."
+    }
+  ],
+  "files": [
+    {
+      "path": "src/auth/middleware.rs",
+      "reason": "Validates access tokens for protected routes."
+    }
+  ],
+  "todos": [
+    {
+      "text": "Add MFA enrollment and challenge flow.",
+      "priority": "high"
+    }
+  ],
+  "open_questions": [
+    "Should refresh tokens be device-scoped?"
+  ],
+  "future_work": [
+    "Support passkeys."
+  ],
+  "prompts": [
+    {
+      "title": "Auth risk review",
+      "prompt": "Review the authentication system for security risks before changing token logic."
+    }
+  ]
+}
