@@ -1,4 +1,5 @@
 use crate::models::{RepoSnapshot, TodoComment};
+use crate::store;
 use ignore::WalkBuilder;
 use std::path::Path;
 use std::process::Command;
@@ -126,8 +127,8 @@ fn secret_warnings(repo: &Path, files: &[String]) -> anyhow::Result<Vec<String>>
 }
 
 fn collect_existing_memory(repo: &Path, feature: &str) -> anyhow::Result<Vec<String>> {
-    let feature_dir = repo
-        .join(".promem/features")
+    let feature_dir = store::memory_root(repo)
+        .join("features")
         .join(normalize_feature(feature));
     let mut entries = Vec::new();
     if !feature_dir.exists() {

@@ -1,6 +1,6 @@
 # Distribution
 
-Promem distribution should start with the simplest reliable path and then add
+Promemo distribution should start with the simplest reliable path and then add
 package managers once release artifacts are stable.
 
 ## Version Source
@@ -8,20 +8,20 @@ package managers once release artifacts are stable.
 The CLI version is the Cargo package version in `Cargo.toml`:
 
 ```toml
-version = "0.2.0"
+version = "0.3.0"
 ```
 
 The CLI exposes that value with:
 
 ```bash
-promem --version
+promemo --version
 ```
 
 Release tags should match the Cargo version with a leading `v`:
 
 ```txt
 Cargo.toml: 0.2.0
-Git tag:    v0.2.0
+Git tag:    v0.3.0
 ```
 
 ## Release Flow
@@ -42,8 +42,8 @@ Git tag:    v0.2.0
 6. Tag the release commit:
 
    ```bash
-   git tag v0.2.0
-   git push origin v0.2.0
+   git tag v0.3.0
+   git push origin v0.3.0
    ```
 
 ## Cargo From Git
@@ -52,13 +52,13 @@ This is the first supported distribution path because it needs no external
 registry setup:
 
 ```bash
-cargo install --git https://github.com/bhagath-krishna/promem.git --tag v0.2.0
+cargo install --git https://github.com/bhagath-krishna/promem.git --tag v0.3.0
 ```
 
 Update to a newer tag:
 
 ```bash
-cargo install --git https://github.com/bhagath-krishna/promem.git --tag v0.2.1 --force
+cargo install --git https://github.com/bhagath-krishna/promem.git --tag v0.3.1 --force
 ```
 
 ## GitHub Releases
@@ -68,40 +68,40 @@ GitHub Releases should publish platform binaries after tags are created.
 Initial target artifacts:
 
 ```txt
-promem-aarch64-apple-darwin.tar.gz
-promem-x86_64-apple-darwin.tar.gz
-promem-x86_64-unknown-linux-gnu.tar.gz
-promem-x86_64-pc-windows-msvc.zip
+promemo-aarch64-apple-darwin.tar.gz
+promemo-x86_64-apple-darwin.tar.gz
+promemo-x86_64-unknown-linux-gnu.tar.gz
+promemo-x86_64-pc-windows-msvc.zip
 ```
 
 Those artifacts become the source for Homebrew and npm wrappers.
 
 ## Homebrew
 
-Homebrew should be the first package-manager distribution target for Promem
-because Promem is a native Rust CLI.
+Homebrew should be the first package-manager distribution target for Promemo
+because Promemo is a native Rust CLI.
 
 Expected user flow:
 
 ```bash
-brew install bhagath-krishna/tap/promem
-brew upgrade promem
+brew install bhagath-krishna/tap/promemo
+brew upgrade promemo
 ```
 
 Implementation path:
 
 1. Create a Homebrew tap repository such as `homebrew-tap`.
-2. Add a `Formula/promem.rb` formula.
+2. Add a `Formula/promemo.rb` formula.
 3. Point the formula at the GitHub release archive for the current tag.
 4. Update the formula SHA for each release.
 
 Formula template:
 
 ```ruby
-class Promem < Formula
+class Promemo < Formula
   desc "Git-native project memory for AI-assisted development"
   homepage "https://github.com/bhagath-krishna/promem"
-  url "https://github.com/bhagath-krishna/promem/archive/refs/tags/v0.2.0.tar.gz"
+  url "https://github.com/bhagath-krishna/promem/archive/refs/tags/v0.3.0.tar.gz"
   sha256 "REPLACE_WITH_RELEASE_TARBALL_SHA"
   license "MIT"
 
@@ -112,7 +112,7 @@ class Promem < Formula
   end
 
   test do
-    assert_match "promem", shell_output("#{bin}/promem --version")
+    assert_match "promemo", shell_output("#{bin}/promemo --version")
   end
 end
 ```
@@ -122,14 +122,14 @@ Prebuilt bottles can come later.
 ## npm
 
 npm distribution is useful for JavaScript-heavy workflows, but it should wrap a
-prebuilt Promem binary rather than requiring every user to compile Rust.
+prebuilt Promemo binary rather than requiring every user to compile Rust.
 
 Expected user flow:
 
 ```bash
-npm install -g promem
-promem --version
-npm update -g promem
+npm install -g promemo
+promemo --version
+npm update -g promemo
 ```
 
 Implementation path:

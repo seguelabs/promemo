@@ -452,7 +452,7 @@ Status: accepted
         let memory = parse_markdown(
             r#"# Authentication
 
-<!-- promem:generated:start -->
+<!-- promemo:generated:start -->
 
 ## Summary
 Auth notes.
@@ -471,7 +471,7 @@ They keep requests stateless.
 - [high] Add MFA.
 ### Open Questions
 * Should tokens be device-scoped?
-<!-- promem:generated:end -->
+<!-- promemo:generated:end -->
 "#,
         )
         .unwrap();

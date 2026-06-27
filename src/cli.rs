@@ -2,7 +2,7 @@ use clap::{Parser, Subcommand};
 use std::path::PathBuf;
 
 #[derive(Debug, Parser)]
-#[command(name = "promem")]
+#[command(name = "promemo")]
 #[command(about = "Git-native project memory for AI-assisted development")]
 #[command(version)]
 pub struct Cli {

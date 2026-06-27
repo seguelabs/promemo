@@ -1,10 +1,11 @@
 use crate::models::{FeatureEntry, MemoryIndex};
+use crate::store;
 use anyhow::Context;
 use std::fs;
 use std::path::Path;
 
 pub fn load_index(repo: &Path) -> anyhow::Result<MemoryIndex> {
-    let path = repo.join(".promem/index.json");
+    let path = store::memory_root(repo).join("index.json");
     if !path.exists() {
         return Ok(MemoryIndex::default());
     }
@@ -13,7 +14,7 @@ pub fn load_index(repo: &Path) -> anyhow::Result<MemoryIndex> {
 }
 
 pub fn save_index(repo: &Path, index: &MemoryIndex) -> anyhow::Result<()> {
-    let path = repo.join(".promem/index.json");
+    let path = store::memory_root(repo).join("index.json");
     fs::write(path, serde_json::to_string_pretty(index)? + "\n")?;
     Ok(())
 }
