@@ -1,4 +1,4 @@
-# Promem Roadmap
+# Promemo Roadmap
 
 This roadmap turns the full vision in `docs/vision.md` and the memory-engine
 addendum in `docs/vision-p2.md` into versioned, shippable milestones.
@@ -29,10 +29,10 @@ long-form product rationale.
 
 ## Release Rule
 
-Promem should stay local-first and Git-native across every version:
+Promemo should stay local-first and Git-native across every version:
 
 - durable memory is Markdown committed with the repository
 - generated caches stay out of Git
 - JSON contracts remain stable for automation
 - no raw transcript storage
-- integrations call the core engine instead of writing `.promem/` directly
+- integrations call the core engine instead of writing `.promemo/` directly

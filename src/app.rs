@@ -119,7 +119,7 @@ pub fn run_with_io(
             let path = store::feature_dir(&repo, &feature)?;
             if !path.exists() {
                 bail!(
-                    "feature `{}` does not exist; save it first with `promem save {}` or `promem save-json {}`",
+                    "feature `{}` does not exist; save it first with `promemo save {}` or `promemo save-json {}`",
                     feature,
                     feature,
                     feature
@@ -204,16 +204,22 @@ fn write_save_report(
     }
 
     writeln!(stdout, "\nNext:")?;
-    writeln!(stdout, "  promem load {}", report.feature)?;
-    writeln!(stdout, "  promem search \"keyword\"")?;
-    writeln!(stdout, "  promem open {}", report.feature)?;
+    writeln!(stdout, "  promemo load {}", report.feature)?;
+    writeln!(stdout, "  promemo search \"keyword\"")?;
+    writeln!(stdout, "  promemo open {}", report.feature)?;
     writeln!(stdout, "\nView memory:")?;
     writeln!(
         stdout,
-        "  less .promem/features/{}/memory.md",
+        "  less {}/features/{}/memory.md",
+        store::MEMORY_DIR,
         report.feature
     )?;
-    writeln!(stdout, "  open .promem/features/{}", report.feature)?;
+    writeln!(
+        stdout,
+        "  open {}/features/{}",
+        store::MEMORY_DIR,
+        report.feature
+    )?;
     Ok(())
 }
 
