@@ -20,7 +20,7 @@ promemo --version
 Release tags should match the Cargo version with a leading `v`:
 
 ```txt
-Cargo.toml: 0.2.0
+Cargo.toml: 0.3.2
 Git tag:    v0.3.2
 ```
 
@@ -46,6 +46,9 @@ Git tag:    v0.3.2
    git push origin v0.3.2
    ```
 
+7. Confirm the `Release` workflow completes and attaches platform archives to
+   the GitHub Release.
+
 ## Cargo From Git
 
 This is the first supported distribution path because it needs no external
@@ -63,7 +66,9 @@ cargo install --git https://github.com/bhagath-krishna/promemo.git --tag v0.3.3 
 
 ## GitHub Releases
 
-GitHub Releases should publish platform binaries after tags are created.
+GitHub Releases publish platform binaries from `.github/workflows/release.yml`
+when a `v*` tag is pushed. The workflow can also be run manually for validation,
+but it only uploads release assets for tag builds.
 
 Initial target artifacts:
 
@@ -72,6 +77,7 @@ promemo-aarch64-apple-darwin.tar.gz
 promemo-x86_64-apple-darwin.tar.gz
 promemo-x86_64-unknown-linux-gnu.tar.gz
 promemo-x86_64-pc-windows-msvc.zip
+SHA256SUMS
 ```
 
 Those artifacts become the source for Homebrew and npm wrappers.
