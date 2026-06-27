@@ -1,10 +1,10 @@
 [package]
 name = "promemo"
-version = "0.3.1"
+version = "0.3.2"
 edition = "2021"
 description = "Git-native project memory for AI-assisted development"
 license = "MIT"
-repository = "https://github.com/bhagath-krishna/promem"
+repository = "https://github.com/bhagath-krishna/promemo"
 readme = "README.md"
 keywords = ["cli", "git", "memory", "ai", "developer-tools"]
 categories = ["command-line-utilities", "development-tools"]
