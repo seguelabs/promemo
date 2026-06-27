@@ -51,7 +51,7 @@ starts at [`docs/roadmap/README.md`](docs/roadmap/README.md).
 Install the latest released tag from GitHub:
 
 ```bash
-cargo install --git https://github.com/bhagath-krishna/promem.git --tag v0.3.1
+cargo install --git https://github.com/bhagath-krishna/promemo.git --tag v0.3.1
 ```
 
 Or install from a local checkout:
@@ -163,7 +163,7 @@ promemo --version
 Install or update from a release tag:
 
 ```bash
-cargo install --git https://github.com/bhagath-krishna/promem.git --tag v0.3.1 --force
+cargo install --git https://github.com/bhagath-krishna/promemo.git --tag v0.3.1 --force
 ```
 
 Homebrew and npm distribution are planned after GitHub release artifacts are
