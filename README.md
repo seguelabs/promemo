@@ -46,22 +46,6 @@ Rust MVP. The long-form product and architecture guide lives at
 [`docs/assistant-usage.md`](docs/assistant-usage.md), and the versioned roadmap
 starts at [`docs/roadmap/README.md`](docs/roadmap/README.md).
 
-## Planned CLI
-
-```bash
-promem init
-promem save-json <feature> [--dry-run]
-promem save <feature> --from <file> [--dry-run]
-promem import handoff <file> --feature <feature> [--dry-run]
-promem load <feature>
-promem list
-promem tree
-promem search <query>
-promem open <feature>
-promem doctor
-promem snapshot <feature> --dry-run --json
-```
-
 ## Quick Start
 
 Install the latest released tag from GitHub:
