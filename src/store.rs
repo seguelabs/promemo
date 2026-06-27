@@ -9,21 +9,26 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use walkdir::WalkDir;
 
-const GENERATED_START: &str = "<!-- promem:generated:start -->";
-const GENERATED_END: &str = "<!-- promem:generated:end -->";
+pub const MEMORY_DIR: &str = ".promemo";
+pub const LEGACY_MEMORY_DIR: &str = ".promem";
+
+const GENERATED_START: &str = "<!-- promemo:generated:start -->";
+const GENERATED_END: &str = "<!-- promemo:generated:end -->";
+const LEGACY_GENERATED_START: &str = "<!-- promem:generated:start -->";
+const LEGACY_GENERATED_END: &str = "<!-- promem:generated:end -->";
 
 pub fn find_repo_root(start: &Path) -> anyhow::Result<PathBuf> {
     for candidate in start.ancestors() {
-        if candidate.join(".promem").is_dir() {
+        if candidate.join(MEMORY_DIR).is_dir() || candidate.join(LEGACY_MEMORY_DIR).is_dir() {
             return Ok(candidate.to_path_buf());
         }
     }
 
-    bail!("not a Promem repository; run `promem init` from the repository root first");
+    bail!("not a Promemo repository; run `promemo init` from the repository root first");
 }
 
 pub fn init_repo(repo: &Path) -> anyhow::Result<()> {
-    let root = repo.join(".promem");
+    let root = repo.join(MEMORY_DIR);
     fs::create_dir_all(root.join("features"))?;
     fs::create_dir_all(root.join("shared"))?;
     fs::create_dir_all(root.join("decisions"))?;
@@ -31,7 +36,7 @@ pub fn init_repo(repo: &Path) -> anyhow::Result<()> {
 
     write_if_missing(
         root.join("project.md"),
-        "# Project Memory\n\nProject-level context for Promem.\n",
+        "# Project Memory\n\nProject-level context for Promemo.\n",
     )?;
     write_if_missing(
         root.join("shared/architecture.md"),
@@ -43,7 +48,7 @@ pub fn init_repo(repo: &Path) -> anyhow::Result<()> {
     )?;
     write_if_missing(
         root.join("shared/notes.md"),
-        "# Shared Notes\n\nHuman-maintained project memory that Promem will not overwrite.\n",
+        "# Shared Notes\n\nHuman-maintained project memory that Promemo will not overwrite.\n",
     )?;
     write_if_missing(root.join("index.json"), "{\n  \"features\": []\n}\n")?;
     write_if_missing(
@@ -64,7 +69,8 @@ pub fn save_memory_with_report(
 ) -> anyhow::Result<SaveReport> {
     ensure_initialized(repo)?;
     let slug = normalize_feature(feature)?;
-    let feature_dir = repo.join(".promem/features").join(&slug);
+    let root = memory_root(repo);
+    let feature_dir = root.join("features").join(&slug);
     fs::create_dir_all(&feature_dir)?;
     let mut files_written = Vec::new();
     let mut warnings = Vec::new();
@@ -76,7 +82,7 @@ pub fn save_memory_with_report(
     }
     write_if_missing(
         feature_dir.join("notes.md"),
-        "# Notes\n\nHuman-maintained notes for this feature. Promem will not overwrite this file.\n",
+        "# Notes\n\nHuman-maintained notes for this feature. Promemo will not overwrite this file.\n",
     )?;
 
     index::upsert_feature(
@@ -87,7 +93,7 @@ pub fn save_memory_with_report(
             summary: memory.summary.clone(),
         },
     )?;
-    files_written.push(".promem/index.json".to_string());
+    files_written.push(relative_path(repo, &root.join("index.json"))?);
     files_written.sort();
     Ok(SaveReport {
         feature: slug,
@@ -105,17 +111,18 @@ pub fn preview_memory_save(
 ) -> anyhow::Result<SaveReport> {
     ensure_initialized(repo)?;
     let slug = normalize_feature(feature)?;
+    let root = memory_root(repo);
     let mut files_written = render::render_feature_files(memory)
         .into_iter()
         .map(|(name, _)| {
-            repo.join(".promem/features")
+            root.join("features")
                 .join(&slug)
                 .join(name)
                 .strip_prefix(repo)
                 .map(|path| path.display().to_string())
         })
         .collect::<Result<Vec<_>, _>>()?;
-    files_written.push(".promem/index.json".to_string());
+    files_written.push(relative_path(repo, &root.join("index.json"))?);
     files_written.sort();
 
     Ok(SaveReport {
@@ -129,24 +136,25 @@ pub fn preview_memory_save(
 
 pub fn feature_dir(repo: &Path, feature: &str) -> anyhow::Result<PathBuf> {
     ensure_initialized(repo)?;
-    Ok(repo
-        .join(".promem/features")
+    Ok(memory_root(repo)
+        .join("features")
         .join(normalize_feature(feature)?))
 }
 
 pub fn load_context(repo: &Path, feature: &str) -> anyhow::Result<LoadedContext> {
     ensure_initialized(repo)?;
     let slug = normalize_feature(feature)?;
+    let root = memory_root(repo);
     let mut text = String::new();
-    append_if_exists(&mut text, repo.join(".promem/project.md"))?;
-    append_if_exists(&mut text, repo.join(".promem/shared/architecture.md"))?;
-    append_if_exists(&mut text, repo.join(".promem/shared/coding-guidelines.md"))?;
-    append_if_exists(&mut text, repo.join(".promem/shared/notes.md"))?;
+    append_if_exists(&mut text, root.join("project.md"))?;
+    append_if_exists(&mut text, root.join("shared/architecture.md"))?;
+    append_if_exists(&mut text, root.join("shared/coding-guidelines.md"))?;
+    append_if_exists(&mut text, root.join("shared/notes.md"))?;
 
-    let feature_dir = repo.join(".promem/features").join(&slug);
+    let feature_dir = root.join("features").join(&slug);
     if !feature_dir.exists() {
         bail!(
-            "feature `{}` does not exist; save it first with `promem save-json {}`",
+            "feature `{}` does not exist; save it first with `promemo save-json {}`",
             slug,
             slug
         );
@@ -176,7 +184,7 @@ pub fn load_context(repo: &Path, feature: &str) -> anyhow::Result<LoadedContext>
 
 pub fn memory_tree(repo: &Path) -> anyhow::Result<Vec<String>> {
     ensure_initialized(repo)?;
-    let root = repo.join(".promem");
+    let root = memory_root(repo);
     let mut entries = Vec::new();
     for entry in WalkDir::new(&root)
         .into_iter()
@@ -193,13 +201,16 @@ pub fn memory_tree(repo: &Path) -> anyhow::Result<Vec<String>> {
 pub fn doctor(repo: &Path) -> anyhow::Result<DoctorReport> {
     let checks = vec![
         check(repo.join(".git").exists(), "repository has .git"),
-        check(repo.join(".promem").exists(), "repository has .promem"),
         check(
-            repo.join(".promem/config.toml").exists(),
+            memory_root(repo).exists(),
+            "repository has memory directory",
+        ),
+        check(
+            memory_root(repo).join("config.toml").exists(),
             "config.toml exists",
         ),
         check(
-            repo.join(".promem/index.json").exists(),
+            memory_root(repo).join("index.json").exists(),
             "index.json exists",
         ),
         check(
@@ -211,10 +222,23 @@ pub fn doctor(repo: &Path) -> anyhow::Result<DoctorReport> {
 }
 
 fn ensure_initialized(repo: &Path) -> anyhow::Result<()> {
-    if !repo.join(".promem").exists() {
-        bail!("not a Promem repository; run `promem init` first");
+    if !memory_root(repo).exists() {
+        bail!("not a Promemo repository; run `promemo init` first");
     }
     Ok(())
+}
+
+pub fn memory_root(repo: &Path) -> PathBuf {
+    let current = repo.join(MEMORY_DIR);
+    if current.exists() {
+        current
+    } else {
+        repo.join(LEGACY_MEMORY_DIR)
+    }
+}
+
+pub fn relative_path(repo: &Path, path: &Path) -> anyhow::Result<String> {
+    Ok(path.strip_prefix(repo)?.display().to_string())
 }
 
 fn normalize_feature(feature: &str) -> anyhow::Result<String> {
@@ -244,19 +268,19 @@ fn write_generated_file(
     }
 
     let existing = fs::read_to_string(path).with_context(|| format!("read {}", path.display()))?;
-    if existing.contains(GENERATED_START) && existing.contains(GENERATED_END) {
+    if has_generated_markers(&existing) {
         fs::write(path, replace_generated_region(&existing, &generated))?;
     } else if existing.trim().is_empty() {
         fs::write(path, generated)?;
     } else {
         warnings.push(format!(
-            "{} had no Promem generated markers; preserved existing content below the generated block",
+            "{} had no Promemo generated markers; preserved existing content below the generated block",
             path.display()
         ));
         fs::write(
             path,
             format!(
-                "{}\n\n<!-- promem:manual:preserved -->\n{}",
+                "{}\n\n<!-- promemo:manual:preserved -->\n{}",
                 generated,
                 existing.trim_start()
             ),
@@ -275,19 +299,29 @@ fn wrap_generated(contents: &str) -> String {
 }
 
 fn replace_generated_region(existing: &str, generated: &str) -> String {
-    let Some(start) = existing.find(GENERATED_START) else {
+    let (start_marker, end_marker) = if existing.contains(GENERATED_START) {
+        (GENERATED_START, GENERATED_END)
+    } else {
+        (LEGACY_GENERATED_START, LEGACY_GENERATED_END)
+    };
+    let Some(start) = existing.find(start_marker) else {
         return generated.to_string();
     };
-    let Some(end) = existing.find(GENERATED_END) else {
+    let Some(end) = existing.find(end_marker) else {
         return generated.to_string();
     };
-    let after_end = end + GENERATED_END.len();
+    let after_end = end + end_marker.len();
     format!(
         "{}{}{}",
         &existing[..start],
         generated.trim_end(),
         &existing[after_end..]
     )
+}
+
+fn has_generated_markers(existing: &str) -> bool {
+    (existing.contains(GENERATED_START) && existing.contains(GENERATED_END))
+        || (existing.contains(LEGACY_GENERATED_START) && existing.contains(LEGACY_GENERATED_END))
 }
 
 fn append_if_exists(out: &mut String, path: PathBuf) -> anyhow::Result<()> {
@@ -312,16 +346,16 @@ mod tests {
     use crate::models::{ArchitectureNote, CurrentState, Decision, DecisionStatus};
 
     #[test]
-    fn init_creates_promem_structure() {
+    fn init_creates_promemo_structure() {
         let dir = tempfile::tempdir().unwrap();
 
         init_repo(dir.path()).unwrap();
 
-        assert!(dir.path().join(".promem/project.md").exists());
-        assert!(dir.path().join(".promem/config.toml").exists());
-        assert!(dir.path().join(".promem/index.json").exists());
-        assert!(dir.path().join(".promem/features").exists());
-        assert!(dir.path().join(".promem/shared").exists());
+        assert!(dir.path().join(".promemo/project.md").exists());
+        assert!(dir.path().join(".promemo/config.toml").exists());
+        assert!(dir.path().join(".promemo/index.json").exists());
+        assert!(dir.path().join(".promemo/features").exists());
+        assert!(dir.path().join(".promemo/shared").exists());
     }
 
     #[test]
@@ -337,6 +371,27 @@ mod tests {
     }
 
     #[test]
+    fn legacy_promem_repositories_still_work() {
+        let dir = tempfile::tempdir().unwrap();
+        let legacy_root = dir.path().join(".promem");
+        fs::create_dir_all(legacy_root.join("features/auth")).unwrap();
+        fs::create_dir_all(legacy_root.join("shared")).unwrap();
+        fs::write(legacy_root.join("index.json"), "{\n  \"features\": []\n}\n").unwrap();
+        fs::write(
+            legacy_root.join("features/auth/context.md"),
+            "<!-- promem:generated:start -->\n# Old Context\n<!-- promem:generated:end -->\n",
+        )
+        .unwrap();
+
+        save_memory(dir.path(), "auth", &sample_memory()).unwrap();
+
+        let context = fs::read_to_string(legacy_root.join("features/auth/context.md")).unwrap();
+        assert!(context.contains("<!-- promemo:generated:start -->"));
+        assert!(context.contains("Email login"));
+        assert!(!dir.path().join(".promemo").exists());
+    }
+
+    #[test]
     fn save_json_writes_markdown_and_index() {
         let dir = tempfile::tempdir().unwrap();
         init_repo(dir.path()).unwrap();
@@ -346,7 +401,7 @@ mod tests {
 
         let context = fs::read_to_string(
             dir.path()
-                .join(".promem/features/authentication/context.md"),
+                .join(".promemo/features/authentication/context.md"),
         )
         .unwrap();
         assert!(context.contains("Email login"));
@@ -358,7 +413,7 @@ mod tests {
     fn save_preserves_unmarked_existing_feature_files() {
         let dir = tempfile::tempdir().unwrap();
         init_repo(dir.path()).unwrap();
-        let feature_dir = dir.path().join(".promem/features/auth");
+        let feature_dir = dir.path().join(".promemo/features/auth");
         fs::create_dir_all(&feature_dir).unwrap();
         fs::write(
             feature_dir.join("context.md"),
@@ -369,12 +424,12 @@ mod tests {
         let report = save_memory_with_report(dir.path(), "auth", &sample_memory()).unwrap();
 
         let context = fs::read_to_string(feature_dir.join("context.md")).unwrap();
-        assert!(context.contains("<!-- promem:generated:start -->"));
+        assert!(context.contains("<!-- promemo:generated:start -->"));
         assert!(context.contains("# Manual Context"));
         assert!(report
             .warnings
             .iter()
-            .any(|warning| warning.contains("had no Promem generated markers")));
+            .any(|warning| warning.contains("had no Promemo generated markers")));
     }
 
     #[test]
