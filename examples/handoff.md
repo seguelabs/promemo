@@ -1,7 +1,7 @@
 # Product Direction
 
 ## Summary
-Promem is a Git-native project memory CLI. v1 focuses on assistant-distilled
+Promemo is a Git-native project memory CLI. v1 focuses on assistant-distilled
 handoff workflows that do not require users to manually write JSON.
 
 ## Current State

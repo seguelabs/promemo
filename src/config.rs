@@ -14,7 +14,7 @@ impl Default for Config {
     fn default() -> Self {
         Self {
             project: ProjectConfig {
-                name: "Promem Project".to_string(),
+                name: "Promemo Project".to_string(),
             },
         }
     }
