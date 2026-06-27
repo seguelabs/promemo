@@ -4,6 +4,7 @@ use std::path::PathBuf;
 #[derive(Debug, Parser)]
 #[command(name = "promem")]
 #[command(about = "Git-native project memory for AI-assisted development")]
+#[command(version)]
 pub struct Cli {
     #[command(subcommand)]
     pub command: Command,
