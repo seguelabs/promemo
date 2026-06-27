@@ -1,0 +1,117 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    name: Build ${{ matrix.artifact }}
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            artifact: promemo-x86_64-unknown-linux-gnu
+            archive: tar.gz
+            binary: promemo
+          - os: macos-13
+            target: x86_64-apple-darwin
+            artifact: promemo-x86_64-apple-darwin
+            archive: tar.gz
+            binary: promemo
+          - os: macos-14
+            target: aarch64-apple-darwin
+            artifact: promemo-aarch64-apple-darwin
+            archive: tar.gz
+            binary: promemo
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            artifact: promemo-x86_64-pc-windows-msvc
+            archive: zip
+            binary: promemo.exe
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Cache Cargo
+        uses: Swatinem/rust-cache@v2
+
+      - name: Build release binary
+        run: cargo build --release --locked --target ${{ matrix.target }}
+
+      - name: Stage archive contents
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "dist/${{ matrix.artifact }}"
+          cp "target/${{ matrix.target }}/release/${{ matrix.binary }}" "dist/${{ matrix.artifact }}/"
+          chmod +x "dist/${{ matrix.artifact }}/${{ matrix.binary }}"
+
+      - name: Create tar archive
+        if: matrix.archive == 'tar.gz'
+        shell: bash
+        run: |
+          set -euo pipefail
+          tar -C dist -czf "dist/${{ matrix.artifact }}.tar.gz" "${{ matrix.artifact }}"
+
+      - name: Create zip archive
+        if: matrix.archive == 'zip'
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd dist
+          7z a "${{ matrix.artifact }}.zip" "${{ matrix.artifact }}"
+
+      - name: Upload release archive artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: dist/${{ matrix.artifact }}.${{ matrix.archive }}
+          if-no-files-found: error
+
+  publish:
+    name: Publish GitHub Release
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+
+    steps:
+      - name: Download release archives
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Create checksums
+        run: |
+          set -euo pipefail
+          cd dist
+          shasum -a 256 promemo-* > SHA256SUMS
+
+      - name: Publish release assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG_NAME: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          gh release view "$TAG_NAME" >/dev/null 2>&1 || \
+            gh release create "$TAG_NAME" --title "$TAG_NAME" --notes "Promemo $TAG_NAME release binaries."
+          gh release upload "$TAG_NAME" dist/* --clobber
