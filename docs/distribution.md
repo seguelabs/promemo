@@ -1,0 +1,143 @@
+# Distribution
+
+Promem distribution should start with the simplest reliable path and then add
+package managers once release artifacts are stable.
+
+## Version Source
+
+The CLI version is the Cargo package version in `Cargo.toml`:
+
+```toml
+version = "0.2.0"
+```
+
+The CLI exposes that value with:
+
+```bash
+promem --version
+```
+
+Release tags should match the Cargo version with a leading `v`:
+
+```txt
+Cargo.toml: 0.2.0
+Git tag:    v0.2.0
+```
+
+## Release Flow
+
+1. Merge feature work into `develop`.
+2. Create a release branch from `develop`.
+3. Update `Cargo.toml` to the release version.
+4. Run validation:
+
+   ```bash
+   cargo fmt
+   cargo test
+   cargo clippy --all-targets --all-features -- -D warnings
+   cargo run -- --version
+   ```
+
+5. Merge the release branch.
+6. Tag the release commit:
+
+   ```bash
+   git tag v0.2.0
+   git push origin v0.2.0
+   ```
+
+## Cargo From Git
+
+This is the first supported distribution path because it needs no external
+registry setup:
+
+```bash
+cargo install --git https://github.com/bhagath-krishna/promem.git --tag v0.2.0
+```
+
+Update to a newer tag:
+
+```bash
+cargo install --git https://github.com/bhagath-krishna/promem.git --tag v0.2.1 --force
+```
+
+## GitHub Releases
+
+GitHub Releases should publish platform binaries after tags are created.
+
+Initial target artifacts:
+
+```txt
+promem-aarch64-apple-darwin.tar.gz
+promem-x86_64-apple-darwin.tar.gz
+promem-x86_64-unknown-linux-gnu.tar.gz
+promem-x86_64-pc-windows-msvc.zip
+```
+
+Those artifacts become the source for Homebrew and npm wrappers.
+
+## Homebrew
+
+Homebrew should be the first package-manager distribution target for Promem
+because Promem is a native Rust CLI.
+
+Expected user flow:
+
+```bash
+brew install bhagath-krishna/tap/promem
+brew upgrade promem
+```
+
+Implementation path:
+
+1. Create a Homebrew tap repository such as `homebrew-tap`.
+2. Add a `Formula/promem.rb` formula.
+3. Point the formula at the GitHub release archive for the current tag.
+4. Update the formula SHA for each release.
+
+Formula template:
+
+```ruby
+class Promem < Formula
+  desc "Git-native project memory for AI-assisted development"
+  homepage "https://github.com/bhagath-krishna/promem"
+  url "https://github.com/bhagath-krishna/promem/archive/refs/tags/v0.2.0.tar.gz"
+  sha256 "REPLACE_WITH_RELEASE_TARBALL_SHA"
+  license "MIT"
+
+  depends_on "rust" => :build
+
+  def install
+    system "cargo", "install", *std_cargo_args
+  end
+
+  test do
+    assert_match "promem", shell_output("#{bin}/promem --version")
+  end
+end
+```
+
+Prebuilt bottles can come later.
+
+## npm
+
+npm distribution is useful for JavaScript-heavy workflows, but it should wrap a
+prebuilt Promem binary rather than requiring every user to compile Rust.
+
+Expected user flow:
+
+```bash
+npm install -g promem
+promem --version
+npm update -g promem
+```
+
+Implementation path:
+
+1. Publish GitHub release binaries.
+2. Add an npm package that detects platform and architecture.
+3. Download or depend on the matching binary package.
+4. Expose the binary through the package `bin` field.
+
+The npm wrapper should be added after the GitHub release artifact layout is
+stable.

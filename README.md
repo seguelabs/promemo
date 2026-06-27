@@ -64,10 +64,22 @@ promem snapshot <feature> --dry-run --json
 
 ## Quick Start
 
-Install the CLI from a local checkout:
+Install the latest released tag from GitHub:
+
+```bash
+cargo install --git https://github.com/bhagath-krishna/promem.git --tag v0.2.0
+```
+
+Or install from a local checkout:
 
 ```bash
 cargo install --path .
+```
+
+Check the installed version:
+
+```bash
+promem --version
 ```
 
 Initialize memory for a repository:
@@ -146,3 +158,29 @@ cargo run -- init
 
 `cargo run -- <command>` is the from-source development form of `promem
 <command>`.
+
+## Versioning
+
+Promem's CLI version comes from `Cargo.toml`:
+
+```toml
+version = "0.2.0"
+```
+
+For a release, update that version, tag the matching commit, and reinstall from
+the checkout:
+
+```bash
+git tag v0.2.0
+cargo install --path .
+promem --version
+```
+
+Install or update from a release tag:
+
+```bash
+cargo install --git https://github.com/bhagath-krishna/promem.git --tag v0.2.0 --force
+```
+
+Homebrew and npm distribution are planned after GitHub release artifacts are
+published. See [`docs/distribution.md`](docs/distribution.md).
