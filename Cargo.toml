@@ -1,9 +1,13 @@
 [package]
 name = "promem"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 description = "Git-native project memory for AI-assisted development"
 license = "MIT"
+repository = "https://github.com/bhagath-krishna/promem"
+readme = "README.md"
+keywords = ["cli", "git", "memory", "ai", "developer-tools"]
+categories = ["command-line-utilities", "development-tools"]
 
 [dependencies]
 anyhow = "1"
