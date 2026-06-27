@@ -1,11 +1,12 @@
 use crate::models::SearchMatch;
+use crate::store;
 use ignore::WalkBuilder;
 use std::fs;
 use std::path::Path;
 
 pub fn keyword_search(repo: &Path, query: &str) -> anyhow::Result<Vec<SearchMatch>> {
     let needle = query.to_lowercase();
-    let root = repo.join(".promem");
+    let root = store::memory_root(repo);
     let mut matches = Vec::new();
     if !root.exists() {
         return Ok(matches);

@@ -1,15 +1,15 @@
 use std::io::Write;
 use std::process::{Command, Stdio};
 
-fn promem() -> Command {
-    Command::new(env!("CARGO_BIN_EXE_promem"))
+fn promemo() -> Command {
+    Command::new(env!("CARGO_BIN_EXE_promemo"))
 }
 
 #[test]
 fn binary_saves_lists_loads_searches_and_outputs_tree_json() {
     let dir = tempfile::tempdir().unwrap();
 
-    let init = promem()
+    let init = promemo()
         .arg("init")
         .current_dir(dir.path())
         .output()
@@ -20,7 +20,7 @@ fn binary_saves_lists_loads_searches_and_outputs_tree_json() {
         String::from_utf8_lossy(&init.stderr)
     );
 
-    let mut save = promem()
+    let mut save = promemo()
         .args(["save-json", "authentication"])
         .current_dir(dir.path())
         .stdin(Stdio::piped())
@@ -40,7 +40,7 @@ fn binary_saves_lists_loads_searches_and_outputs_tree_json() {
         String::from_utf8_lossy(&save_output.stderr)
     );
 
-    let list = promem()
+    let list = promemo()
         .arg("list")
         .current_dir(dir.path())
         .output()
@@ -50,7 +50,7 @@ fn binary_saves_lists_loads_searches_and_outputs_tree_json() {
         "authentication"
     );
 
-    let load = promem()
+    let load = promemo()
         .args(["load", "authentication"])
         .current_dir(dir.path())
         .output()
@@ -59,34 +59,34 @@ fn binary_saves_lists_loads_searches_and_outputs_tree_json() {
     assert!(loaded.contains("# Authentication"));
     assert!(loaded.contains("JWT access tokens"));
 
-    let search = promem()
+    let search = promemo()
         .args(["search", "passkeys"])
         .current_dir(dir.path())
         .output()
         .unwrap();
     assert!(String::from_utf8_lossy(&search.stdout).contains("Support passkeys"));
 
-    let tree = promem()
+    let tree = promemo()
         .args(["tree", "--json"])
         .current_dir(dir.path())
         .output()
         .unwrap();
     let entries: Vec<String> = serde_json::from_slice(&tree.stdout).unwrap();
-    assert!(entries.contains(&".promem/features/authentication/context.md".to_string()));
+    assert!(entries.contains(&".promemo/features/authentication/context.md".to_string()));
 }
 
 #[test]
 fn binary_save_json_prints_human_success_output() {
     let dir = tempfile::tempdir().unwrap();
 
-    let init = promem()
+    let init = promemo()
         .arg("init")
         .current_dir(dir.path())
         .output()
         .unwrap();
     assert!(init.status.success());
 
-    let mut save = promem()
+    let mut save = promemo()
         .args(["save-json", "authentication"])
         .current_dir(dir.path())
         .stdin(Stdio::piped())
@@ -109,8 +109,8 @@ fn binary_save_json_prints_human_success_output() {
     let text = String::from_utf8_lossy(&output.stdout);
     assert!(text.contains("Parsed memory: Authentication"));
     assert!(text.contains("Saved feature: authentication"));
-    assert!(text.contains("promem open authentication"));
-    assert!(text.contains("less .promem/features/authentication/memory.md"));
+    assert!(text.contains("promemo open authentication"));
+    assert!(text.contains("less .promemo/features/authentication/memory.md"));
 }
 
 #[test]
@@ -119,7 +119,7 @@ fn binary_commands_work_from_repo_subdirectories() {
     let nested = dir.path().join("src/auth");
     std::fs::create_dir_all(&nested).unwrap();
 
-    let init = promem()
+    let init = promemo()
         .arg("init")
         .current_dir(dir.path())
         .output()
@@ -130,7 +130,7 @@ fn binary_commands_work_from_repo_subdirectories() {
         String::from_utf8_lossy(&init.stderr)
     );
 
-    let mut save = promem()
+    let mut save = promemo()
         .args(["save-json", "authentication"])
         .current_dir(&nested)
         .stdin(Stdio::piped())
@@ -152,10 +152,10 @@ fn binary_commands_work_from_repo_subdirectories() {
 
     assert!(dir
         .path()
-        .join(".promem/features/authentication/context.md")
+        .join(".promemo/features/authentication/context.md")
         .exists());
 
-    let load = promem()
+    let load = promemo()
         .args(["load", "authentication"])
         .current_dir(&nested)
         .output()
@@ -170,14 +170,14 @@ fn binary_save_from_handoff_markdown_writes_memory_and_json_report() {
     let handoff = dir.path().join("handoff.md");
     std::fs::write(&handoff, include_str!("../examples/handoff.md")).unwrap();
 
-    let init = promem()
+    let init = promemo()
         .arg("init")
         .current_dir(dir.path())
         .output()
         .unwrap();
     assert!(init.status.success());
 
-    let output = promem()
+    let output = promemo()
         .args([
             "save",
             "product-direction",
@@ -201,9 +201,9 @@ fn binary_save_from_handoff_markdown_writes_memory_and_json_report() {
         .as_array()
         .unwrap()
         .iter()
-        .any(|path| path == ".promem/features/product-direction/context.md"));
+        .any(|path| path == ".promemo/features/product-direction/context.md"));
 
-    let loaded = promem()
+    let loaded = promemo()
         .args(["load", "product-direction"])
         .current_dir(dir.path())
         .output()
@@ -216,14 +216,14 @@ fn binary_save_from_handoff_markdown_writes_memory_and_json_report() {
 #[test]
 fn binary_save_stdin_accepts_handoff_markdown() {
     let dir = tempfile::tempdir().unwrap();
-    let init = promem()
+    let init = promemo()
         .arg("init")
         .current_dir(dir.path())
         .output()
         .unwrap();
     assert!(init.status.success());
 
-    let mut save = promem()
+    let mut save = promemo()
         .args(["save", "product-direction", "--stdin"])
         .current_dir(dir.path())
         .stdin(Stdio::piped())
@@ -245,7 +245,7 @@ fn binary_save_stdin_accepts_handoff_markdown() {
     );
     assert!(dir
         .path()
-        .join(".promem/features/product-direction/decisions.md")
+        .join(".promemo/features/product-direction/decisions.md")
         .exists());
 }
 
@@ -255,14 +255,14 @@ fn binary_import_handoff_alias_writes_memory_and_json_report() {
     let handoff = dir.path().join("handoff.md");
     std::fs::write(&handoff, include_str!("../examples/handoff.md")).unwrap();
 
-    let init = promem()
+    let init = promemo()
         .arg("init")
         .current_dir(dir.path())
         .output()
         .unwrap();
     assert!(init.status.success());
 
-    let output = promem()
+    let output = promemo()
         .args([
             "import",
             "handoff",
@@ -284,7 +284,7 @@ fn binary_import_handoff_alias_writes_memory_and_json_report() {
     assert_eq!(report["feature"], "product-direction");
     assert!(dir
         .path()
-        .join(".promem/features/product-direction/memory.md")
+        .join(".promemo/features/product-direction/memory.md")
         .exists());
 }
 
@@ -294,14 +294,14 @@ fn binary_save_handoff_dry_run_previews_without_writing() {
     let handoff = dir.path().join("handoff.md");
     std::fs::write(&handoff, include_str!("../examples/handoff.md")).unwrap();
 
-    let init = promem()
+    let init = promemo()
         .arg("init")
         .current_dir(dir.path())
         .output()
         .unwrap();
     assert!(init.status.success());
 
-    let output = promem()
+    let output = promemo()
         .args([
             "save",
             "product-direction",
@@ -324,7 +324,7 @@ fn binary_save_handoff_dry_run_previews_without_writing() {
     assert!(text.contains("Would save feature: product-direction"));
     assert!(!dir
         .path()
-        .join(".promem/features/product-direction/memory.md")
+        .join(".promemo/features/product-direction/memory.md")
         .exists());
 }
 
@@ -334,14 +334,14 @@ fn binary_import_handoff_dry_run_json_reports_without_writing() {
     let handoff = dir.path().join("handoff.md");
     std::fs::write(&handoff, include_str!("../examples/handoff.md")).unwrap();
 
-    let init = promem()
+    let init = promemo()
         .arg("init")
         .current_dir(dir.path())
         .output()
         .unwrap();
     assert!(init.status.success());
 
-    let output = promem()
+    let output = promemo()
         .args([
             "import",
             "handoff",
@@ -365,7 +365,7 @@ fn binary_import_handoff_dry_run_json_reports_without_writing() {
     assert_eq!(report["dry_run"], true);
     assert!(!dir
         .path()
-        .join(".promem/features/product-direction/memory.md")
+        .join(".promemo/features/product-direction/memory.md")
         .exists());
 }
 
@@ -373,14 +373,14 @@ fn binary_import_handoff_dry_run_json_reports_without_writing() {
 fn binary_search_reports_no_matches_in_human_mode() {
     let dir = tempfile::tempdir().unwrap();
 
-    let init = promem()
+    let init = promemo()
         .arg("init")
         .current_dir(dir.path())
         .output()
         .unwrap();
     assert!(init.status.success());
 
-    let output = promem()
+    let output = promemo()
         .args(["search", "nothing-here"])
         .current_dir(dir.path())
         .output()
@@ -397,14 +397,14 @@ fn binary_search_reports_no_matches_in_human_mode() {
 fn binary_open_missing_feature_reports_clear_error() {
     let dir = tempfile::tempdir().unwrap();
 
-    let init = promem()
+    let init = promemo()
         .arg("init")
         .current_dir(dir.path())
         .output()
         .unwrap();
     assert!(init.status.success());
 
-    let output = promem()
+    let output = promemo()
         .args(["open", "missing"])
         .current_dir(dir.path())
         .output()
@@ -424,14 +424,14 @@ fn binary_snapshot_human_output_includes_handoff_context() {
         .unwrap();
     assert!(init_git.status.success());
 
-    let init = promem()
+    let init = promemo()
         .arg("init")
         .current_dir(dir.path())
         .output()
         .unwrap();
     assert!(init.status.success());
 
-    let mut save = promem()
+    let mut save = promemo()
         .args(["save-json", "authentication"])
         .current_dir(dir.path())
         .stdin(Stdio::piped())
@@ -454,7 +454,7 @@ fn binary_snapshot_human_output_includes_handoff_context() {
     )
     .unwrap();
 
-    let output = promem()
+    let output = promemo()
         .args(["snapshot", "authentication", "--dry-run"])
         .current_dir(dir.path())
         .output()
@@ -472,20 +472,20 @@ fn binary_snapshot_human_output_includes_handoff_context() {
     assert!(text.contains("## TODO/FIXME Comments"));
     assert!(text.contains("wire auth"));
     assert!(text.contains("## Existing Feature Memory"));
-    assert!(text.contains(".promem/features/authentication/memory.md"));
+    assert!(text.contains(".promemo/features/authentication/memory.md"));
 }
 
 #[test]
 fn binary_reports_missing_feature() {
     let dir = tempfile::tempdir().unwrap();
-    let init = promem()
+    let init = promemo()
         .arg("init")
         .current_dir(dir.path())
         .output()
         .unwrap();
     assert!(init.status.success());
 
-    let output = promem()
+    let output = promemo()
         .args(["load", "missing"])
         .current_dir(dir.path())
         .output()
@@ -498,14 +498,14 @@ fn binary_reports_missing_feature() {
 #[test]
 fn binary_reports_malformed_json_context() {
     let dir = tempfile::tempdir().unwrap();
-    let init = promem()
+    let init = promemo()
         .arg("init")
         .current_dir(dir.path())
         .output()
         .unwrap();
     assert!(init.status.success());
 
-    let mut save = promem()
+    let mut save = promemo()
         .args(["save-json", "bad"])
         .current_dir(dir.path())
         .stdin(Stdio::piped())
