@@ -50,11 +50,14 @@ starts at [`docs/roadmap/README.md`](docs/roadmap/README.md).
 
 ```bash
 promem init
-promem save-json <feature>
+promem save-json <feature> [--dry-run]
+promem save <feature> --from <file> [--dry-run]
+promem import handoff <file> --feature <feature> [--dry-run]
 promem load <feature>
 promem list
 promem tree
 promem search <query>
+promem open <feature>
 promem doctor
 promem snapshot <feature> --dry-run --json
 ```
@@ -104,6 +107,12 @@ Save assistant-distilled handoff Markdown without writing JSON:
 promem save product-direction --from examples/handoff.md
 ```
 
+Preview a save without writing files:
+
+```bash
+promem save product-direction --from examples/handoff.md --dry-run
+```
+
 Load prompt-ready context:
 
 ```bash
@@ -116,6 +125,7 @@ Inspect saved memory:
 promem list
 promem tree --json
 promem search "refresh token"
+promem open authentication
 promem doctor --json
 ```
 
