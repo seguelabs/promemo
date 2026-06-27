@@ -92,9 +92,46 @@ pub fn save_memory_with_report(
     Ok(SaveReport {
         feature: slug,
         title: memory.title.clone(),
+        dry_run: false,
         files_written,
         warnings,
     })
+}
+
+pub fn preview_memory_save(
+    repo: &Path,
+    feature: &str,
+    memory: &MemoryInput,
+) -> anyhow::Result<SaveReport> {
+    ensure_initialized(repo)?;
+    let slug = normalize_feature(feature)?;
+    let mut files_written = render::render_feature_files(memory)
+        .into_iter()
+        .map(|(name, _)| {
+            repo.join(".promem/features")
+                .join(&slug)
+                .join(name)
+                .strip_prefix(repo)
+                .map(|path| path.display().to_string())
+        })
+        .collect::<Result<Vec<_>, _>>()?;
+    files_written.push(".promem/index.json".to_string());
+    files_written.sort();
+
+    Ok(SaveReport {
+        feature: slug,
+        title: memory.title.clone(),
+        dry_run: true,
+        files_written,
+        warnings: Vec::new(),
+    })
+}
+
+pub fn feature_dir(repo: &Path, feature: &str) -> anyhow::Result<PathBuf> {
+    ensure_initialized(repo)?;
+    Ok(repo
+        .join(".promem/features")
+        .join(normalize_feature(feature)?))
 }
 
 pub fn load_context(repo: &Path, feature: &str) -> anyhow::Result<LoadedContext> {
