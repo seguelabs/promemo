@@ -111,6 +111,7 @@ pub struct FeatureEntry {
 pub struct SaveReport {
     pub feature: String,
     pub title: String,
+    pub dry_run: bool,
     pub files_written: Vec<String>,
     pub warnings: Vec<String>,
 }

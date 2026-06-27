@@ -14,6 +14,8 @@ pub enum Command {
     Init,
     SaveJson {
         feature: String,
+        #[arg(long)]
+        dry_run: bool,
     },
     Save {
         feature: String,
@@ -23,6 +25,8 @@ pub enum Command {
         stdin: bool,
         #[arg(long)]
         json: bool,
+        #[arg(long)]
+        dry_run: bool,
     },
     Load {
         feature: String,
@@ -53,6 +57,9 @@ pub enum Command {
         #[arg(long)]
         json: bool,
     },
+    Open {
+        feature: String,
+    },
     Import {
         #[command(subcommand)]
         command: ImportCommand,
@@ -67,5 +74,7 @@ pub enum ImportCommand {
         feature: String,
         #[arg(long)]
         json: bool,
+        #[arg(long)]
+        dry_run: bool,
     },
 }
