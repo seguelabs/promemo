@@ -1,36 +1,36 @@
-# Promem — Part 2: Memory Engine Features
+# Promemo — Part 2: Memory Engine Features
 
-**Project:** Promem  
+**Project:** Promemo  
 **Document Type:** Product Architecture / Feature Expansion Guide  
 **Scope:** Supermemory-inspired memory-engine features only  
 **Status:** Full Vision Addendum  
-**Primary Storage:** `.promem/` committed to Git  
+**Primary Storage:** `.promemo/` committed to Git  
 **Philosophy:** Repo-native memory, not general personal memory  
 
 ---
 
 ## 1. Purpose of This Addendum
 
-The first Promem guide defined the core product:
+The first Promemo guide defined the core product:
 
 ```txt
 AI coding session / handoff / snapshot
 ↓
 Structured project memory
 ↓
-.promem/ Markdown files
+.promemo/ Markdown files
 ↓
 Git commit
 ↓
 Reusable context for future AI sessions
 ```
 
-This second part defines the **memory-engine layer** that makes Promem stronger than a Markdown writer.
+This second part defines the **memory-engine layer** that makes Promemo stronger than a Markdown writer.
 
 The goal is not to copy Supermemory as a general-purpose user memory platform.  
 The goal is to borrow useful memory-system ideas and adapt them to a **Git-native software repository memory tool**.
 
-Promem should remain:
+Promemo should remain:
 
 ```txt
 local-first
@@ -57,7 +57,7 @@ The recommended feature layer:
 
 ## 2. Product Positioning
 
-Promem should not become:
+Promemo should not become:
 
 ```txt
 general user memory
@@ -67,7 +67,7 @@ chat history backup
 hosted memory API first
 ```
 
-Promem should become:
+Promemo should become:
 
 ```txt
 Supermemory-style recall for a Git repository.
@@ -76,30 +76,30 @@ Supermemory-style recall for a Git repository.
 Simple positioning:
 
 ```txt
-Promem is Git-native memory for AI-assisted software projects.
+Promemo is Git-native memory for AI-assisted software projects.
 ```
 
 Sharper positioning:
 
 ```txt
-Promem turns AI coding sessions into committed project memory that future AI sessions can search, load, and trust.
+Promemo turns AI coding sessions into committed project memory that future AI sessions can search, load, and trust.
 ```
 
 The core distinction:
 
 ```txt
 Supermemory remembers users for agents.
-Promem remembers repositories for AI-assisted development.
+Promemo remembers repositories for AI-assisted development.
 ```
 
 ---
 
 ## 3. Design Principle
 
-The `.promem/` folder remains the source of truth.
+The `.promemo/` folder remains the source of truth.
 
 ```txt
-.promem/
+.promemo/
   project.md
   config.toml
   index.json
@@ -135,21 +135,21 @@ The `.promem/` folder remains the source of truth.
 Commit:
 
 ```txt
-.promem/project.md
-.promem/config.toml
-.promem/index.json
-.promem/features/**/*.md
-.promem/shared/**/*.md
+.promemo/project.md
+.promemo/config.toml
+.promemo/index.json
+.promemo/features/**/*.md
+.promemo/shared/**/*.md
 ```
 
 Do not commit:
 
 ```txt
-.promem/cache/
-.promem/embeddings.db
-.promem/chunks.db
-.promem/graph.db
-.promem/rerank-cache.db
+.promemo/cache/
+.promemo/embeddings.db
+.promemo/chunks.db
+.promemo/graph.db
+.promemo/rerank-cache.db
 ```
 
 Reason:
@@ -179,27 +179,27 @@ But the memory may say:
 Refresh token rotation was chosen to reduce replay risk.
 ```
 
-Semantic search allows Promem to find meaning, not just exact words.
+Semantic search allows Promemo to find meaning, not just exact words.
 
 ## 1.2 Command Examples
 
 ```bash
-promem search "why did we rotate tokens"
-promem search "refund retry behavior"
-promem search "what handles webhook idempotency"
-promem search "why admin theme is separate"
+promemo search "why did we rotate tokens"
+promemo search "refund retry behavior"
+promemo search "what handles webhook idempotency"
+promemo search "why admin theme is separate"
 ```
 
 With smart mode:
 
 ```bash
-promem search "why did we rotate tokens" --semantic
-promem search "refund retry behavior" --smart
+promemo search "why did we rotate tokens" --semantic
+promemo search "refund retry behavior" --smart
 ```
 
 ## 1.3 What It Searches
 
-Promem should search across:
+Promemo should search across:
 
 ```txt
 project.md
@@ -214,7 +214,7 @@ features/*/changelog.md
 
 ## 1.4 Chunking Strategy
 
-Promem should split Markdown by headings.
+Promemo should split Markdown by headings.
 
 Example:
 
@@ -237,7 +237,7 @@ Chunk:
 
 ```json
 {
-  "document": ".promem/features/authentication/decisions.md",
+  "document": ".promemo/features/authentication/decisions.md",
   "heading": "Refresh Token Rotation",
   "content": "Decision: Use refresh token rotation. Reason: Reduces replay risk...",
   "type": "decision",
@@ -250,8 +250,8 @@ Chunk:
 Local cache:
 
 ```txt
-.promem/cache/chunks.db
-.promem/cache/embeddings.db
+.promemo/cache/chunks.db
+.promemo/cache/embeddings.db
 ```
 
 Suggested local stack:
@@ -288,7 +288,7 @@ return ranked snippets
 ## 1.7 JSON Output Contract
 
 ```bash
-promem search "refresh token replay risk" --json
+promemo search "refresh token replay risk" --json
 ```
 
 Output:
@@ -298,7 +298,7 @@ Output:
   "query": "refresh token replay risk",
   "results": [
     {
-      "path": ".promem/features/authentication/decisions.md",
+      "path": ".promemo/features/authentication/decisions.md",
       "feature": "authentication",
       "type": "decision",
       "heading": "Refresh Token Rotation",
@@ -311,18 +311,18 @@ Output:
 
 ## 1.8 Why This Matters
 
-This turns Promem from static notes into a retrieval engine.
+This turns Promemo from static notes into a retrieval engine.
 
 Without semantic search:
 
 ```txt
-Promem is documentation.
+Promemo is documentation.
 ```
 
 With semantic search:
 
 ```txt
-Promem becomes AI-readable project memory.
+Promemo becomes AI-readable project memory.
 ```
 
 ---
@@ -342,7 +342,7 @@ what was issue with admin theme
 that websocket thing
 ```
 
-Promem should rewrite vague questions into better search queries.
+Promemo should rewrite vague questions into better search queries.
 
 ## 2.2 Example
 
@@ -373,8 +373,8 @@ payments refund webhook retry policy idempotency failure handling
 ## 2.3 Command Examples
 
 ```bash
-promem search "auth token thing" --rewrite
-promem search "refund retry" --smart
+promemo search "auth token thing" --rewrite
+promemo search "refund retry" --smart
 ```
 
 ## 2.4 Pipeline
@@ -393,10 +393,10 @@ Return results with both original and rewritten query
 
 ## 2.5 Context for Rewriting
 
-Promem can use:
+Promemo can use:
 
 ```txt
-.promem/index.json
+.promemo/index.json
 feature names
 known APIs
 known file paths
@@ -419,7 +419,7 @@ It should not need the whole repo for rewriting.
 
 ## 2.7 Implementation Modes
 
-Promem should support three modes:
+Promemo should support three modes:
 
 ```txt
 off
@@ -463,7 +463,7 @@ Semantic search may retrieve related chunks, but not always the best ones.
 
 Reranking improves final context quality.
 
-Promem should retrieve more than it needs, then rerank the candidates based on the actual user request.
+Promemo should retrieve more than it needs, then rerank the candidates based on the actual user request.
 
 ## 3.2 Example
 
@@ -495,9 +495,9 @@ Reranked output:
 ## 3.3 Command Examples
 
 ```bash
-promem search "refresh token replay risk" --rerank
-promem load authentication --smart
-promem load payments --smart --max-tokens 8000
+promemo search "refresh token replay risk" --rerank
+promemo load authentication --smart
+promemo load payments --smart --max-tokens 8000
 ```
 
 ## 3.4 Reranking Pipeline
@@ -516,7 +516,7 @@ Return top 5–10 chunks
 
 ## 3.5 Scoring Factors
 
-Promem should consider:
+Promemo should consider:
 
 ```txt
 semantic similarity
@@ -549,7 +549,7 @@ linked file match: +0.10
   "query": "refresh token replay risk",
   "results": [
     {
-      "path": ".promem/features/authentication/decisions.md",
+      "path": ".promemo/features/authentication/decisions.md",
       "heading": "Refresh Token Rotation",
       "initial_score": 0.77,
       "rerank_score": 0.94,
@@ -566,7 +566,7 @@ linked file match: +0.10
 
 ## 3.7 Why This Matters
 
-The value of Promem is not just finding something.
+The value of Promemo is not just finding something.
 
 The value is loading the **right** context into an AI session.
 
@@ -582,7 +582,7 @@ Good reranking creates useful context.
 
 Software features are connected.
 
-Promem should understand relationships like:
+Promemo should understand relationships like:
 
 ```txt
 Authentication → User Model
@@ -592,17 +592,17 @@ Webhooks → Retry Policy
 Admin → Design System
 ```
 
-This allows Promem to expand context intelligently.
+This allows Promemo to expand context intelligently.
 
 ## 4.2 Why a Graph Matters
 
 If a user runs:
 
 ```bash
-promem load refunds --smart
+promemo load refunds --smart
 ```
 
-Promem may need to include:
+Promemo may need to include:
 
 ```txt
 payments
@@ -615,7 +615,7 @@ Even if the user only asked for refunds.
 
 ## 4.3 Relationship Types
 
-Promem should support:
+Promemo should support:
 
 ```txt
 depends_on
@@ -672,7 +672,7 @@ depends_on:
 Generated graph cache:
 
 ```txt
-.promem/cache/graph.db
+.promemo/cache/graph.db
 ```
 
 Do not commit graph cache.
@@ -682,10 +682,10 @@ If a relationship is important and human-authored, store it in frontmatter or Ma
 ## 4.7 Command Examples
 
 ```bash
-promem graph authentication
-promem related payments
-promem load refunds --include-related
-promem load checkout --depth 2
+promemo graph authentication
+promemo related payments
+promemo load refunds --include-related
+promemo load checkout --depth 2
 ```
 
 ## 4.8 JSON Output
@@ -710,7 +710,7 @@ promem load checkout --depth 2
 
 ## 4.9 Context Expansion Rules
 
-Promem should avoid dumping the whole graph.
+Promemo should avoid dumping the whole graph.
 
 Use rules:
 
@@ -729,7 +729,7 @@ A codebase is not a folder tree.
 
 It is a network of decisions.
 
-The graph lets Promem load memory the way software is actually connected.
+The graph lets Promemo load memory the way software is actually connected.
 
 ---
 
@@ -739,7 +739,7 @@ The graph lets Promem load memory the way software is actually connected.
 
 Bad memory is worse than no memory.
 
-Promem must know which memories are current, proposed, deprecated, superseded, stale, or conflicting.
+Promemo must know which memories are current, proposed, deprecated, superseded, stale, or conflicting.
 
 ## 5.2 Status Types
 
@@ -763,7 +763,7 @@ unknown
 feature: authentication
 type: decision
 status: superseded
-superseded_by: .promem/features/authentication/decisions.md#server-side-sessions
+superseded_by: .promemo/features/authentication/decisions.md#server-side-sessions
 updated_at: 2026-06-25
 review_after: 2026-09-25
 ---
@@ -772,16 +772,16 @@ review_after: 2026-09-25
 ## 5.4 Command Examples
 
 ```bash
-promem status
-promem stale
-promem review
-promem mark authentication/decisions.md --status deprecated
-promem mark authentication --review-after 90d
+promemo status
+promemo stale
+promemo review
+promemo mark authentication/decisions.md --status deprecated
+promemo mark authentication --review-after 90d
 ```
 
 ## 5.5 Staleness Signals
 
-Promem should detect possible staleness from:
+Promemo should detect possible staleness from:
 
 ```txt
 old updated_at
@@ -810,9 +810,9 @@ conflicting: warn loudly
 Commands:
 
 ```bash
-promem load auth
-promem load auth --include-stale
-promem load auth --current-only
+promemo load auth
+promemo load auth --include-stale
+promemo load auth --current-only
 ```
 
 ## 5.7 JSON Output
@@ -828,7 +828,7 @@ promem load auth --current-only
   },
   "warnings": [
     {
-      "path": ".promem/features/authentication/decisions.md",
+      "path": ".promemo/features/authentication/decisions.md",
       "message": "Decision references deleted file src/auth/legacy-session.ts"
     }
   ]
@@ -839,7 +839,7 @@ promem load auth --current-only
 
 LLMs follow context strongly.
 
-If Promem gives stale context, the AI may implement the wrong thing.
+If Promemo gives stale context, the AI may implement the wrong thing.
 
 Staleness tracking protects future AI sessions from outdated reasoning.
 
@@ -851,7 +851,7 @@ Staleness tracking protects future AI sessions from outdated reasoning.
 
 As project memory grows, conflicts will happen.
 
-Promem should detect contradictions before they poison context.
+Promemo should detect contradictions before they poison context.
 
 ## 6.2 Example
 
@@ -867,7 +867,7 @@ New decision:
 Move sessions to Redis-backed server-side sessions.
 ```
 
-Promem should flag:
+Promemo should flag:
 
 ```txt
 Potential conflict:
@@ -877,7 +877,7 @@ sessions/architecture.md says Redis sessions.
 
 ## 6.3 Conflict Types
 
-Promem should detect:
+Promemo should detect:
 
 ```txt
 decision vs decision
@@ -893,16 +893,16 @@ status conflict
 ## 6.4 Command Examples
 
 ```bash
-promem conflicts
-promem conflicts authentication
-promem resolve
-promem resolve authentication --mark-superseded
+promemo conflicts
+promemo conflicts authentication
+promemo resolve
+promemo resolve authentication --mark-superseded
 ```
 
 ## 6.5 Detection Pipeline
 
 ```txt
-Run promem sync
+Run promemo sync
 ↓
 Parse all Markdown/frontmatter
 ↓
@@ -920,7 +920,7 @@ Write conflict report
 ## 6.6 Conflict Report
 
 ```txt
-.promem/cache/conflicts.json
+.promemo/cache/conflicts.json
 ```
 
 Example:
@@ -933,11 +933,11 @@ Example:
       "severity": "high",
       "type": "decision_vs_decision",
       "left": {
-        "path": ".promem/features/authentication/decisions.md",
+        "path": ".promemo/features/authentication/decisions.md",
         "claim": "Use JWT-only stateless authentication."
       },
       "right": {
-        "path": ".promem/features/sessions/architecture.md",
+        "path": ".promemo/features/sessions/architecture.md",
         "claim": "Use Redis-backed server-side sessions."
       },
       "suggested_actions": [
@@ -953,11 +953,11 @@ Example:
 ## 6.7 Resolution Workflow
 
 ```bash
-promem conflicts
-promem resolve conflict_auth_sessions_001
+promemo conflicts
+promemo resolve conflict_auth_sessions_001
 ```
 
-Promem asks:
+Promemo asks:
 
 ```txt
 1. Mark left as superseded
@@ -972,17 +972,17 @@ Result:
 ```md
 ---
 status: superseded
-superseded_by: .promem/features/sessions/architecture.md#redis-backed-sessions
+superseded_by: .promemo/features/sessions/architecture.md#redis-backed-sessions
 ---
 ```
 
 ## 6.8 Why This Matters
 
-Promem should not just accumulate memory.
+Promemo should not just accumulate memory.
 
 It should maintain memory quality.
 
-Contradiction detection turns Promem into a trusted context layer.
+Contradiction detection turns Promemo into a trusted context layer.
 
 ---
 
@@ -990,7 +990,7 @@ Contradiction detection turns Promem into a trusted context layer.
 
 ## 7.1 Goal
 
-Promem should import useful project knowledge from external tools, but only when it strengthens repository memory.
+Promemo should import useful project knowledge from external tools, but only when it strengthens repository memory.
 
 It should not become a general life/work memory collector.
 
@@ -1038,12 +1038,12 @@ private user preferences
 ## 7.5 Importer Commands
 
 ```bash
-promem import github-pr 123
-promem import github-issue 88
-promem import linear PROJ-42
-promem import adr docs/adr/001-auth.md
-promem import handoff handoff.md --feature authentication
-promem import slack-thread --url <url> --feature payments
+promemo import github-pr 123
+promemo import github-issue 88
+promemo import linear PROJ-42
+promemo import adr docs/adr/001-auth.md
+promemo import handoff handoff.md --feature authentication
+promemo import slack-thread --url <url> --feature payments
 ```
 
 ## 7.6 Import Pipeline
@@ -1057,7 +1057,7 @@ Convert to structured memory JSON
 ↓
 Render Markdown
 ↓
-Update .promem/features/*
+Update .promemo/features/*
 ↓
 Developer reviews git diff
 ↓
@@ -1066,7 +1066,7 @@ Developer commits
 
 ## 7.7 No Raw Source Storage by Default
 
-Promem should not store full source content unless the user opts in.
+Promemo should not store full source content unless the user opts in.
 
 Default:
 
@@ -1093,15 +1093,15 @@ source:
 Command:
 
 ```bash
-promem import github-pr 123 --feature authentication
+promemo import github-pr 123 --feature authentication
 ```
 
 Output:
 
 ```txt
-.promem/features/authentication/changelog.md
-.promem/features/authentication/decisions.md
-.promem/features/authentication/todos.md
+.promemo/features/authentication/changelog.md
+.promemo/features/authentication/decisions.md
+.promemo/features/authentication/todos.md
 ```
 
 Extracted memory:
@@ -1156,7 +1156,7 @@ design comments
 commit messages
 ```
 
-Repo-focused importers let Promem collect reasoning from the places developers already work.
+Repo-focused importers let Promemo collect reasoning from the places developers already work.
 
 ---
 
@@ -1166,9 +1166,9 @@ When all 7 features work together:
 
 ```txt
 User asks:
-promem load checkout --smart
+promemo load checkout --smart
 
-Promem:
+Promemo:
 1. Reads checkout memory
 2. Rewrites the query/context goal
 3. Searches semantically
@@ -1192,7 +1192,7 @@ Open TODOs
 Warnings about stale/conflicting memory
 ```
 
-This is the point where Promem stops being a Markdown writer and becomes a real context engine.
+This is the point where Promemo stops being a Markdown writer and becomes a real context engine.
 
 ---
 
@@ -1201,61 +1201,61 @@ This is the point where Promem stops being a Markdown writer and becomes a real 
 ## Search
 
 ```bash
-promem search "refund retries"
-promem search "auth tokens" --semantic
-promem search "admin theme" --smart
-promem search "webhook retry" --json
+promemo search "refund retries"
+promemo search "auth tokens" --semantic
+promemo search "admin theme" --smart
+promemo search "webhook retry" --json
 ```
 
 ## Load
 
 ```bash
-promem load authentication
-promem load payments --smart
-promem load checkout --include-related
-promem load auth --current-only
-promem load auth --max-tokens 8000
+promemo load authentication
+promemo load payments --smart
+promemo load checkout --include-related
+promemo load auth --current-only
+promemo load auth --max-tokens 8000
 ```
 
 ## Graph
 
 ```bash
-promem graph authentication
-promem related payments
-promem related checkout --depth 2
+promemo graph authentication
+promemo related payments
+promemo related checkout --depth 2
 ```
 
 ## Status
 
 ```bash
-promem status
-promem stale
-promem review
-promem mark auth --status accepted
+promemo status
+promemo stale
+promemo review
+promemo mark auth --status accepted
 ```
 
 ## Conflicts
 
 ```bash
-promem conflicts
-promem conflicts authentication
-promem resolve
+promemo conflicts
+promemo conflicts authentication
+promemo resolve
 ```
 
 ## Import
 
 ```bash
-promem import handoff handoff.md --feature authentication
-promem import github-pr 123 --feature payments
-promem import adr docs/adr/001-auth.md
+promemo import handoff handoff.md --feature authentication
+promemo import github-pr 123 --feature payments
+promemo import adr docs/adr/001-auth.md
 ```
 
 ## Sync
 
 ```bash
-promem sync
-promem sync --rebuild-index
-promem sync --check-conflicts
+promemo sync
+promemo sync --rebuild-index
+promemo sync --check-conflicts
 ```
 
 ---
@@ -1277,8 +1277,8 @@ basic filters
 Commands:
 
 ```bash
-promem sync
-promem search "query" --semantic
+promemo sync
+promemo search "query" --semantic
 ```
 
 ## Phase B — Smart Context Loading
@@ -1296,8 +1296,8 @@ current-only loading
 Commands:
 
 ```bash
-promem load auth --smart
-promem load auth --max-tokens 8000
+promemo load auth --smart
+promemo load auth --max-tokens 8000
 ```
 
 ## Phase C — Memory Graph
@@ -1315,9 +1315,9 @@ include-related loading
 Commands:
 
 ```bash
-promem graph auth
-promem related payments
-promem load checkout --include-related
+promemo graph auth
+promemo related payments
+promemo load checkout --include-related
 ```
 
 ## Phase D — Memory Quality
@@ -1334,9 +1334,9 @@ resolve workflow
 Commands:
 
 ```bash
-promem stale
-promem conflicts
-promem resolve
+promemo stale
+promemo conflicts
+promemo resolve
 ```
 
 ## Phase E — Repo Importers
@@ -1355,8 +1355,8 @@ Slack thread importer
 Commands:
 
 ```bash
-promem import github-pr 123
-promem import adr docs/adr/001-auth.md
+promemo import github-pr 123
+promemo import adr docs/adr/001-auth.md
 ```
 
 ---
@@ -1365,47 +1365,47 @@ promem import adr docs/adr/001-auth.md
 
 ```txt
 crates/
-  promem-core/
+  promemo-core/
     memory.rs
     feature.rs
     status.rs
     config.rs
 
-  promem-cli/
+  promemo-cli/
     main.rs
     commands/
 
-  promem-store/
+  promemo-store/
     markdown.rs
     frontmatter.rs
     index_json.rs
     fs.rs
 
-  promem-search/
+  promemo-search/
     chunking.rs
     keyword.rs
     semantic.rs
     rerank.rs
     query_rewrite.rs
 
-  promem-graph/
+  promemo-graph/
     graph.rs
     relationships.rs
     related.rs
 
-  promem-quality/
+  promemo-quality/
     stale.rs
     conflicts.rs
     resolve.rs
 
-  promem-import/
+  promemo-import/
     handoff.rs
     github.rs
     adr.rs
     linear.rs
     slack.rs
 
-  promem-render/
+  promemo-render/
     context.rs
     decisions.rs
     architecture.rs
@@ -1418,7 +1418,7 @@ crates/
 
 ```toml
 [memory]
-root = ".promem"
+root = ".promemo"
 
 [search]
 mode = "hybrid"
@@ -1429,7 +1429,7 @@ default_top_k = 10
 [semantic]
 enabled = true
 provider = "local"
-cache_dir = ".promem/cache"
+cache_dir = ".promemo/cache"
 
 [graph]
 enabled = true
@@ -1448,7 +1448,7 @@ store_raw_sources = false
 
 # Frontmatter Standard
 
-All Promem documents should support frontmatter:
+All Promemo documents should support frontmatter:
 
 ```yaml
 ---
@@ -1503,7 +1503,7 @@ unknown
 
 # What Not to Build
 
-Avoid these unless Promem later becomes a hosted product:
+Avoid these unless Promemo later becomes a hosted product:
 
 ```txt
 general user memory
@@ -1515,7 +1515,7 @@ team SaaS dashboard
 social/collaboration layer
 ```
 
-Promem should remain:
+Promemo should remain:
 
 ```txt
 repo memory first
@@ -1528,10 +1528,10 @@ AI-tool agnostic
 
 # Final Vision
 
-Promem starts as:
+Promemo starts as:
 
 ```txt
-A CLI that saves AI project context into .promem/
+A CLI that saves AI project context into .promemo/
 ```
 
 But with these seven features, it becomes:
@@ -1556,6 +1556,6 @@ contradiction detection
 MCP-ready context loading
 ```
 
-Promem should not remember everything.
+Promemo should not remember everything.
 
-Promem should remember what matters to the repository.
+Promemo should remember what matters to the repository.
