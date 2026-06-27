@@ -52,13 +52,13 @@ This is the first supported distribution path because it needs no external
 registry setup:
 
 ```bash
-cargo install --git https://github.com/bhagath-krishna/promem.git --tag v0.3.1
+cargo install --git https://github.com/bhagath-krishna/promemo.git --tag v0.3.1
 ```
 
 Update to a newer tag:
 
 ```bash
-cargo install --git https://github.com/bhagath-krishna/promem.git --tag v0.3.2 --force
+cargo install --git https://github.com/bhagath-krishna/promemo.git --tag v0.3.2 --force
 ```
 
 ## GitHub Releases
@@ -100,8 +100,8 @@ Formula template:
 ```ruby
 class Promemo < Formula
   desc "Git-native project memory for AI-assisted development"
-  homepage "https://github.com/bhagath-krishna/promem"
-  url "https://github.com/bhagath-krishna/promem/archive/refs/tags/v0.3.1.tar.gz"
+  homepage "https://github.com/bhagath-krishna/promemo"
+  url "https://github.com/bhagath-krishna/promemo/archive/refs/tags/v0.3.1.tar.gz"
   sha256 "REPLACE_WITH_RELEASE_TARBALL_SHA"
   license "MIT"
 
