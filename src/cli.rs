@@ -13,6 +13,7 @@ pub struct Cli {
 #[derive(Debug, Subcommand)]
 pub enum Command {
     Init,
+    Mcp,
     Schema {
         #[command(subcommand)]
         command: SchemaCommand,
@@ -84,6 +85,30 @@ pub enum Command {
         #[command(subcommand)]
         command: ImportCommand,
     },
+}
+
+impl Cli {
+    pub fn wants_json_errors(&self) -> bool {
+        match &self.command {
+            Command::Extract { json, .. }
+            | Command::Save { json, .. }
+            | Command::Load { json, .. }
+            | Command::List { json, .. }
+            | Command::Tree { json, .. }
+            | Command::Search { json, .. }
+            | Command::Doctor { json, .. }
+            | Command::Snapshot { json, .. } => *json,
+            Command::Import { command } => match command {
+                ImportCommand::Handoff { json, .. } => *json,
+            },
+            Command::Init
+            | Command::Mcp
+            | Command::Schema { .. }
+            | Command::Memory { .. }
+            | Command::SaveJson { .. }
+            | Command::Open { .. } => false,
+        }
+    }
 }
 
 #[derive(Debug, Subcommand)]

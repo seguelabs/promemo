@@ -85,7 +85,6 @@ fn binary_save_json_prints_human_success_output() {
         .output()
         .unwrap();
     assert!(init.status.success());
-
     let mut save = promemo()
         .args(["save-json", "authentication"])
         .current_dir(dir.path())
@@ -674,4 +673,343 @@ fn binary_reports_malformed_json_context() {
     assert!(
         String::from_utf8_lossy(&output.stderr).contains("failed to read memory JSON from stdin")
     );
+}
+
+#[test]
+fn binary_json_mode_errors_use_stable_envelope() {
+    let dir = tempfile::tempdir().unwrap();
+    let init = promemo()
+        .arg("init")
+        .current_dir(dir.path())
+        .output()
+        .unwrap();
+    assert!(init.status.success());
+
+    let output = promemo()
+        .args(["load", "missing", "--json"])
+        .current_dir(dir.path())
+        .output()
+        .unwrap();
+
+    assert!(!output.status.success());
+    let envelope: serde_json::Value = serde_json::from_slice(&output.stderr).unwrap();
+    assert_eq!(envelope["error"]["code"], "promemo_error");
+    assert!(envelope["error"]["message"]
+        .as_str()
+        .unwrap()
+        .contains("feature `missing` does not exist"));
+}
+
+#[test]
+fn binary_mcp_lists_and_calls_tools() {
+    let dir = tempfile::tempdir().unwrap();
+    let init = promemo()
+        .arg("init")
+        .current_dir(dir.path())
+        .output()
+        .unwrap();
+    assert!(init.status.success());
+    std::fs::write(
+        dir.path().join(".promemo/config.toml"),
+        r#"[project]
+name = "Promemo MCP Test"
+
+[provider]
+kind = "openai-compatible"
+base_url = "https://api.openai.com/v1"
+model = "gpt-4.1-mini"
+api_key_env = "PROMEMO_TEST_MCP_MISSING_API_KEY"
+timeout_seconds = 1
+"#,
+    )
+    .unwrap();
+
+    let mut save = promemo()
+        .args(["save-json", "authentication"])
+        .current_dir(dir.path())
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .unwrap();
+    save.stdin
+        .as_mut()
+        .unwrap()
+        .write_all(include_bytes!("../examples/memory.json"))
+        .unwrap();
+    let save_output = save.wait_with_output().unwrap();
+    assert!(save_output.status.success());
+
+    let memory: serde_json::Value =
+        serde_json::from_slice(include_bytes!("../examples/memory.json")).unwrap();
+    let messages = [
+        mcp_frame(serde_json::json!({
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "initialize",
+            "params": {}
+        })),
+        mcp_frame(serde_json::json!({
+            "jsonrpc": "2.0",
+            "id": 2,
+            "method": "tools/list",
+            "params": {}
+        })),
+        mcp_frame(serde_json::json!({
+            "jsonrpc": "2.0",
+            "id": 3,
+            "method": "tools/call",
+            "params": {
+                "name": "promemo_search",
+                "arguments": { "query": "passkeys" }
+            }
+        })),
+        mcp_frame(serde_json::json!({
+            "jsonrpc": "2.0",
+            "id": 4,
+            "method": "tools/call",
+            "params": {
+                "name": "promemo_load_context",
+                "arguments": { "feature": "authentication" }
+            }
+        })),
+        mcp_frame(serde_json::json!({
+            "jsonrpc": "2.0",
+            "id": 5,
+            "method": "tools/call",
+            "params": {
+                "name": "promemo_save_memory",
+                "arguments": {
+                    "feature": "mcp-auth",
+                    "memory": memory.clone()
+                }
+            }
+        })),
+        mcp_frame(serde_json::json!({
+            "jsonrpc": "2.0",
+            "id": 6,
+            "method": "tools/call",
+            "params": {
+                "name": "promemo_list_features",
+                "arguments": {}
+            }
+        })),
+        mcp_frame(serde_json::json!({
+            "jsonrpc": "2.0",
+            "id": 7,
+            "method": "tools/call",
+            "params": {
+                "name": "promemo_snapshot",
+                "arguments": { "feature": "authentication" }
+            }
+        })),
+        mcp_frame(serde_json::json!({
+            "jsonrpc": "2.0",
+            "id": 8,
+            "method": "tools/call",
+            "params": {
+                "name": "promemo_preview_memory",
+                "arguments": {
+                    "feature": "preview-auth",
+                    "memory": memory
+                }
+            }
+        })),
+        mcp_frame(serde_json::json!({
+            "jsonrpc": "2.0",
+            "id": 9,
+            "method": "tools/call",
+            "params": {
+                "name": "promemo_memory_schema",
+                "arguments": {}
+            }
+        })),
+        mcp_frame(serde_json::json!({
+            "jsonrpc": "2.0",
+            "id": 10,
+            "method": "tools/call",
+            "params": {
+                "name": "promemo_tree",
+                "arguments": {}
+            }
+        })),
+        mcp_frame(serde_json::json!({
+            "jsonrpc": "2.0",
+            "id": 11,
+            "method": "tools/call",
+            "params": {
+                "name": "promemo_doctor",
+                "arguments": {}
+            }
+        })),
+        mcp_frame(serde_json::json!({
+            "jsonrpc": "2.0",
+            "id": 12,
+            "method": "tools/call",
+            "params": {
+                "name": "promemo_read_feature_file",
+                "arguments": {
+                    "feature": "authentication",
+                    "file": "memory.md"
+                }
+            }
+        })),
+        mcp_frame(serde_json::json!({
+            "jsonrpc": "2.0",
+            "id": 13,
+            "method": "tools/call",
+            "params": {
+                "name": "promemo_extract_memory",
+                "arguments": {
+                    "feature": "extracted-auth",
+                    "source_text": "We shipped JWT auth and need passkeys later."
+                }
+            }
+        })),
+        mcp_frame(serde_json::json!({
+            "jsonrpc": "2.0",
+            "id": 14,
+            "method": "resources/list",
+            "params": {}
+        })),
+        mcp_frame(serde_json::json!({
+            "jsonrpc": "2.0",
+            "id": 15,
+            "method": "prompts/list",
+            "params": {}
+        })),
+    ]
+    .join("");
+
+    let mut mcp = promemo()
+        .arg("mcp")
+        .current_dir(dir.path())
+        .env_remove("PROMEMO_TEST_MCP_MISSING_API_KEY")
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .unwrap();
+    mcp.stdin
+        .as_mut()
+        .unwrap()
+        .write_all(messages.as_bytes())
+        .unwrap();
+    drop(mcp.stdin.take());
+    let output = mcp.wait_with_output().unwrap();
+
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let responses = parse_mcp_frames(&output.stdout);
+    assert_eq!(responses.len(), 15);
+    assert_eq!(responses[0]["result"]["serverInfo"]["name"], "promemo");
+    assert!(responses[1]["result"]["tools"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|tool| tool["name"] == "promemo_save_memory"));
+    assert!(responses[1]["result"]["tools"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|tool| tool["name"] == "promemo_extract_memory"));
+    assert!(responses[1]["result"]["tools"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|tool| tool["name"] == "promemo_read_feature_file"));
+    assert!(responses[2]["result"]["content"][0]["text"]
+        .as_str()
+        .unwrap()
+        .contains("Support passkeys"));
+    assert!(responses[3]["result"]["content"][0]["text"]
+        .as_str()
+        .unwrap()
+        .contains("JWT access tokens"));
+    assert!(responses[4]["result"]["content"][0]["text"]
+        .as_str()
+        .unwrap()
+        .contains("\"feature\": \"mcp-auth\""));
+    assert!(responses[5]["result"]["content"][0]["text"]
+        .as_str()
+        .unwrap()
+        .contains("\"name\": \"mcp-auth\""));
+    assert!(responses[6]["result"]["content"][0]["text"]
+        .as_str()
+        .unwrap()
+        .contains("\"feature\": \"authentication\""));
+    assert!(responses[7]["result"]["content"][0]["text"]
+        .as_str()
+        .unwrap()
+        .contains("\"dry_run\": true"));
+    assert!(responses[8]["result"]["content"][0]["text"]
+        .as_str()
+        .unwrap()
+        .contains("\"title\": \"Promemo MemoryInput\""));
+    assert!(responses[9]["result"]["content"][0]["text"]
+        .as_str()
+        .unwrap()
+        .contains(".promemo/features/authentication/memory.md"));
+    assert!(responses[10]["result"]["content"][0]["text"]
+        .as_str()
+        .unwrap()
+        .contains("\"message\": \"config.toml exists\""));
+    assert!(responses[11]["result"]["content"][0]["text"]
+        .as_str()
+        .unwrap()
+        .contains("\"file\": \"memory.md\""));
+    assert!(responses[12]["error"]["message"]
+        .as_str()
+        .unwrap()
+        .contains("PROMEMO_TEST_MCP_MISSING_API_KEY"));
+    assert!(responses[13]["result"]["resources"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|resource| resource["uri"] == "promemo://features/authentication"));
+    assert!(responses[14]["result"]["prompts"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|prompt| prompt["name"] == "promemo_save_distilled_memory"));
+    assert!(dir
+        .path()
+        .join(".promemo/features/mcp-auth/memory.md")
+        .exists());
+    assert!(!dir
+        .path()
+        .join(".promemo/features/preview-auth/memory.md")
+        .exists());
+}
+
+fn mcp_frame(value: serde_json::Value) -> String {
+    let body = value.to_string();
+    format!("Content-Length: {}\r\n\r\n{}", body.len(), body)
+}
+
+fn parse_mcp_frames(output: &[u8]) -> Vec<serde_json::Value> {
+    let text = String::from_utf8(output.to_vec()).unwrap();
+    let mut rest = text.as_str();
+    let mut values = Vec::new();
+
+    while !rest.is_empty() {
+        let header_end = rest.find("\r\n\r\n").unwrap();
+        let header = &rest[..header_end];
+        let length = header
+            .lines()
+            .find_map(|line| line.strip_prefix("Content-Length:"))
+            .unwrap()
+            .trim()
+            .parse::<usize>()
+            .unwrap();
+        let body_start = header_end + 4;
+        let body_end = body_start + length;
+        values.push(serde_json::from_str(&rest[body_start..body_end]).unwrap());
+        rest = &rest[body_end..];
+    }
+
+    values
 }
