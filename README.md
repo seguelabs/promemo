@@ -109,6 +109,16 @@ Preview a save without writing files:
 promemo save product-direction --from examples/handoff.md --dry-run
 ```
 
+Extract structured memory from messy notes with a configured provider:
+
+```bash
+promemo extract authentication --from notes.md --dry-run
+```
+
+Provider extraction reads `.promemo/config.toml` and uses the configured API key
+environment variable. It produces `MemoryInput` JSON internally, validates it,
+then uses the same preview/save pipeline as `save-json`.
+
 Load prompt-ready context:
 
 ```bash
