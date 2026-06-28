@@ -17,6 +17,10 @@ pub enum Command {
         #[command(subcommand)]
         command: SchemaCommand,
     },
+    Memory {
+        #[command(subcommand)]
+        command: MemoryCommand,
+    },
     SaveJson {
         feature: String,
         #[arg(long)]
@@ -87,4 +91,10 @@ pub enum ImportCommand {
 #[derive(Debug, Subcommand)]
 pub enum SchemaCommand {
     MemoryInput,
+}
+
+#[derive(Debug, Subcommand)]
+pub enum MemoryCommand {
+    Preview,
+    Save,
 }
