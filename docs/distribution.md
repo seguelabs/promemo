@@ -8,7 +8,7 @@ package managers once release artifacts are stable.
 The CLI version is the Cargo package version in `Cargo.toml`:
 
 ```toml
-version = "0.3.2"
+version = "0.3.3"
 ```
 
 The CLI exposes that value with:
@@ -20,8 +20,8 @@ promemo --version
 Release tags should match the Cargo version with a leading `v`:
 
 ```txt
-Cargo.toml: 0.3.2
-Git tag:    v0.3.2
+Cargo.toml: 0.3.3
+Git tag:    v0.3.3
 ```
 
 ## Release Flow
@@ -42,8 +42,8 @@ Git tag:    v0.3.2
 6. Tag the release commit:
 
    ```bash
-   git tag v0.3.2
-   git push origin v0.3.2
+   git tag v0.3.3
+   git push origin v0.3.3
    ```
 
 7. Confirm the `Release` workflow completes and attaches platform archives to
@@ -55,13 +55,13 @@ This is the first supported distribution path because it needs no external
 registry setup:
 
 ```bash
-cargo install --git https://github.com/bhagath-krishna/promemo.git --tag v0.3.2
+cargo install --git https://github.com/bhagath-krishna/promemo.git --tag v0.3.3
 ```
 
 Update to a newer tag:
 
 ```bash
-cargo install --git https://github.com/bhagath-krishna/promemo.git --tag v0.3.3 --force
+cargo install --git https://github.com/bhagath-krishna/promemo.git --tag v0.3.4 --force
 ```
 
 ## GitHub Releases
@@ -107,7 +107,7 @@ Formula template:
 class Promemo < Formula
   desc "Git-native project memory for AI-assisted development"
   homepage "https://github.com/bhagath-krishna/promemo"
-  url "https://github.com/bhagath-krishna/promemo/archive/refs/tags/v0.3.2.tar.gz"
+  url "https://github.com/bhagath-krishna/promemo/archive/refs/tags/v0.3.3.tar.gz"
   sha256 "REPLACE_WITH_RELEASE_TARBALL_SHA"
   license "MIT"
 
