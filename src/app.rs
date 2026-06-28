@@ -1,5 +1,5 @@
 use crate::cli::{Cli, Command, ImportCommand, MemoryCommand, SchemaCommand};
-use crate::{config, git_snapshot, handoff, index, models, provider, render, search, store};
+use crate::{config, git_snapshot, handoff, index, mcp, models, provider, render, search, store};
 use anyhow::{bail, Context, Result};
 use std::io::{Read, Write};
 use std::path::Path;
@@ -17,6 +17,7 @@ pub fn run_with_io(
 ) -> Result<()> {
     match cli.command {
         Command::Init => store::init_repo(cwd)?,
+        Command::Mcp => mcp::serve(cwd, stdin, stdout)?,
         Command::Schema { command } => match command {
             SchemaCommand::MemoryInput => {
                 writeln!(
