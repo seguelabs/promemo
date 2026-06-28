@@ -1,5 +1,5 @@
-use crate::cli::{Cli, Command, ImportCommand};
-use crate::{git_snapshot, handoff, index, models, render, search, store};
+use crate::cli::{Cli, Command, ImportCommand, MemoryCommand, SchemaCommand};
+use crate::{config, git_snapshot, handoff, index, mcp, models, provider, render, search, store};
 use anyhow::{bail, Context, Result};
 use std::io::{Read, Write};
 use std::path::Path;
@@ -17,6 +17,57 @@ pub fn run_with_io(
 ) -> Result<()> {
     match cli.command {
         Command::Init => store::init_repo(cwd)?,
+        Command::Mcp => mcp::serve(cwd, stdin, stdout)?,
+        Command::Schema { command } => match command {
+            SchemaCommand::MemoryInput => {
+                writeln!(
+                    stdout,
+                    "{}",
+                    serde_json::to_string_pretty(&models::memory_input_schema())?
+                )?;
+            }
+        },
+        Command::Memory { command } => {
+            let repo = store::find_repo_root(cwd)?;
+            let request = models::MemorySaveRequest::from_reader(stdin)
+                .context("failed to read memory save request JSON from stdin")?;
+            let report = match command {
+                MemoryCommand::Preview => {
+                    store::preview_memory_save(&repo, &request.feature, &request.memory)?
+                }
+                MemoryCommand::Save => {
+                    store::save_memory_with_report(&repo, &request.feature, &request.memory)?
+                }
+            };
+            writeln!(stdout, "{}", serde_json::to_string_pretty(&report)?)?;
+        }
+        Command::Extract {
+            feature,
+            from,
+            stdin: use_stdin,
+            dry_run,
+            json,
+        } => {
+            let repo = store::find_repo_root(cwd)?;
+            let source_text = read_text_input(from.as_deref(), use_stdin, stdin)
+                .context("failed to read extraction input")?;
+            let config = config::Config::load(&repo).context("failed to load Promemo config")?;
+            let provider = provider::provider_from_config(&config)?;
+            let memory = provider.extract_memory(&provider::ExtractionRequest {
+                feature: feature.clone(),
+                source_text,
+            })?;
+            let report = if dry_run {
+                store::preview_memory_save(&repo, &feature, &memory)?
+            } else {
+                store::save_memory_with_report(&repo, &feature, &memory)?
+            };
+            if json {
+                writeln!(stdout, "{}", serde_json::to_string_pretty(&report)?)?;
+            } else {
+                write_save_report(stdout, &report, "Extracted memory")?;
+            }
+        }
         Command::SaveJson { feature, dry_run } => {
             let repo = store::find_repo_root(cwd)?;
             let memory = models::MemoryInput::from_reader(stdin)
@@ -157,23 +208,26 @@ fn save_handoff(
     dry_run: bool,
     stdin: &mut impl Read,
 ) -> Result<models::SaveReport> {
-    let input = if use_stdin {
-        let mut input = String::new();
-        stdin
-            .read_to_string(&mut input)
-            .context("failed to read handoff Markdown from stdin")?;
-        input
-    } else if let Some(path) = from {
-        std::fs::read_to_string(path)
-            .with_context(|| format!("failed to read {}", path.display()))?
-    } else {
-        anyhow::bail!("provide either `--from <file>` or `--stdin`");
-    };
+    let input = read_text_input(from, use_stdin, stdin)?;
     let memory = handoff::parse_markdown(&input)?;
     if dry_run {
         store::preview_memory_save(repo, feature, &memory)
     } else {
         store::save_memory_with_report(repo, feature, &memory)
+    }
+}
+
+fn read_text_input(from: Option<&Path>, use_stdin: bool, stdin: &mut impl Read) -> Result<String> {
+    if use_stdin {
+        let mut input = String::new();
+        stdin
+            .read_to_string(&mut input)
+            .context("failed to read text from stdin")?;
+        Ok(input)
+    } else if let Some(path) = from {
+        std::fs::read_to_string(path).with_context(|| format!("failed to read {}", path.display()))
+    } else {
+        anyhow::bail!("provide either `--from <file>` or `--stdin`");
     }
 }
 

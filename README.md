@@ -51,7 +51,7 @@ starts at [`docs/roadmap/README.md`](docs/roadmap/README.md).
 Install the latest released tag from GitHub:
 
 ```bash
-cargo install --git https://github.com/bhagath-krishna/promemo.git --tag v0.3.3
+cargo install --git https://github.com/bhagath-krishna/promemo.git --tag v0.3.4
 ```
 
 Or install from a local checkout:
@@ -109,6 +109,16 @@ Preview a save without writing files:
 promemo save product-direction --from examples/handoff.md --dry-run
 ```
 
+Extract structured memory from messy notes with a configured provider:
+
+```bash
+promemo extract authentication --from notes.md --dry-run
+```
+
+Provider extraction reads `.promemo/config.toml` and uses the configured API key
+environment variable. It produces `MemoryInput` JSON internally, validates it,
+then uses the same preview/save pipeline as `save-json`.
+
 Load prompt-ready context:
 
 ```bash
@@ -124,6 +134,20 @@ promemo search "refresh token"
 promemo open authentication
 promemo doctor --json
 ```
+
+Run the MCP stdio server for MCP-capable assistants:
+
+```bash
+promemo mcp
+```
+
+The MCP server exposes tools for loading context, searching memory, previewing
+and saving structured memory, extracting memory with the configured provider,
+listing features, reading feature memory files, inspecting the memory tree,
+running doctor checks, and collecting repository snapshots.
+Provider extraction previews return both the exact generated `MemoryInput` and
+the save report, so assistants can ask for approval and then save the reviewed
+memory with `promemo_save_memory`.
 
 Preview repository state for a feature:
 
@@ -148,14 +172,14 @@ cargo run -- init
 Promemo's CLI version comes from `Cargo.toml`:
 
 ```toml
-version = "0.3.3"
+version = "0.3.4"
 ```
 
 For a release, update that version, tag the matching commit, and reinstall from
 the checkout:
 
 ```bash
-git tag v0.3.3
+git tag v0.3.4
 cargo install --path .
 promemo --version
 ```
@@ -163,7 +187,7 @@ promemo --version
 Install or update from a release tag:
 
 ```bash
-cargo install --git https://github.com/bhagath-krishna/promemo.git --tag v0.3.3 --force
+cargo install --git https://github.com/bhagath-krishna/promemo.git --tag v0.3.4 --force
 ```
 
 Homebrew and npm distribution are planned after GitHub release artifacts are
