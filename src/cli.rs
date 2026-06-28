@@ -13,6 +13,10 @@ pub struct Cli {
 #[derive(Debug, Subcommand)]
 pub enum Command {
     Init,
+    Schema {
+        #[command(subcommand)]
+        command: SchemaCommand,
+    },
     SaveJson {
         feature: String,
         #[arg(long)]
@@ -78,4 +82,9 @@ pub enum ImportCommand {
         #[arg(long)]
         dry_run: bool,
     },
+}
+
+#[derive(Debug, Subcommand)]
+pub enum SchemaCommand {
+    MemoryInput,
 }
