@@ -1,4 +1,4 @@
-use crate::cli::{Cli, Command, ImportCommand, SchemaCommand};
+use crate::cli::{Cli, Command, ImportCommand, MemoryCommand, SchemaCommand};
 use crate::{git_snapshot, handoff, index, models, render, search, store};
 use anyhow::{bail, Context, Result};
 use std::io::{Read, Write};
@@ -26,6 +26,20 @@ pub fn run_with_io(
                 )?;
             }
         },
+        Command::Memory { command } => {
+            let repo = store::find_repo_root(cwd)?;
+            let request = models::MemorySaveRequest::from_reader(stdin)
+                .context("failed to read memory save request JSON from stdin")?;
+            let report = match command {
+                MemoryCommand::Preview => {
+                    store::preview_memory_save(&repo, &request.feature, &request.memory)?
+                }
+                MemoryCommand::Save => {
+                    store::save_memory_with_report(&repo, &request.feature, &request.memory)?
+                }
+            };
+            writeln!(stdout, "{}", serde_json::to_string_pretty(&report)?)?;
+        }
         Command::SaveJson { feature, dry_run } => {
             let repo = store::find_repo_root(cwd)?;
             let memory = models::MemoryInput::from_reader(stdin)
