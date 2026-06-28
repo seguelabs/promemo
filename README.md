@@ -51,7 +51,7 @@ starts at [`docs/roadmap/README.md`](docs/roadmap/README.md).
 Install the latest released tag from GitHub:
 
 ```bash
-cargo install --git https://github.com/bhagath-krishna/promemo.git --tag v0.3.3
+cargo install --git https://github.com/bhagath-krishna/promemo.git --tag v0.3.4
 ```
 
 Or install from a local checkout:
@@ -172,14 +172,14 @@ cargo run -- init
 Promemo's CLI version comes from `Cargo.toml`:
 
 ```toml
-version = "0.3.3"
+version = "0.3.4"
 ```
 
 For a release, update that version, tag the matching commit, and reinstall from
 the checkout:
 
 ```bash
-git tag v0.3.3
+git tag v0.3.4
 cargo install --path .
 promemo --version
 ```
@@ -187,7 +187,7 @@ promemo --version
 Install or update from a release tag:
 
 ```bash
-cargo install --git https://github.com/bhagath-krishna/promemo.git --tag v0.3.3 --force
+cargo install --git https://github.com/bhagath-krishna/promemo.git --tag v0.3.4 --force
 ```
 
 Homebrew and npm distribution are planned after GitHub release artifacts are
