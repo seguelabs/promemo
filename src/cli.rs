@@ -21,6 +21,17 @@ pub enum Command {
         #[command(subcommand)]
         command: MemoryCommand,
     },
+    Extract {
+        feature: String,
+        #[arg(long, value_name = "FILE", conflicts_with = "stdin")]
+        from: Option<PathBuf>,
+        #[arg(long, conflicts_with = "from")]
+        stdin: bool,
+        #[arg(long)]
+        dry_run: bool,
+        #[arg(long)]
+        json: bool,
+    },
     SaveJson {
         feature: String,
         #[arg(long)]

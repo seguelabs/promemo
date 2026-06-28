@@ -223,6 +223,52 @@ fn binary_memory_save_reads_request_json_and_writes_memory() {
 }
 
 #[test]
+fn binary_extract_reports_missing_provider_api_key_before_network_call() {
+    let dir = tempfile::tempdir().unwrap();
+    let notes = dir.path().join("notes.md");
+    std::fs::write(&notes, "We shipped JWT auth. Need passkeys later.").unwrap();
+
+    let init = promemo()
+        .arg("init")
+        .current_dir(dir.path())
+        .output()
+        .unwrap();
+    assert!(init.status.success());
+
+    std::fs::write(
+        dir.path().join(".promemo/config.toml"),
+        r#"[project]
+name = "Promemo Test"
+
+[provider]
+kind = "openai-compatible"
+base_url = "https://api.openai.com/v1"
+model = "gpt-4.1-mini"
+api_key_env = "PROMEMO_TEST_MISSING_API_KEY"
+timeout_seconds = 1
+"#,
+    )
+    .unwrap();
+
+    let output = promemo()
+        .args([
+            "extract",
+            "authentication",
+            "--from",
+            notes.to_str().unwrap(),
+            "--dry-run",
+        ])
+        .env_remove("PROMEMO_TEST_MISSING_API_KEY")
+        .current_dir(dir.path())
+        .output()
+        .unwrap();
+
+    assert!(!output.status.success());
+    assert!(String::from_utf8_lossy(&output.stderr)
+        .contains("provider API key env var `PROMEMO_TEST_MISSING_API_KEY` is not set"));
+}
+
+#[test]
 fn binary_commands_work_from_repo_subdirectories() {
     let dir = tempfile::tempdir().unwrap();
     let nested = dir.path().join("src/auth");
