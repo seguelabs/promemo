@@ -105,8 +105,9 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           TAG_NAME: ${{ github.ref_name }}
+          REPO_NAME: ${{ github.repository }}
         run: |
           set -euo pipefail
-          gh release view "$TAG_NAME" >/dev/null 2>&1 || \
-            gh release create "$TAG_NAME" --title "$TAG_NAME" --notes "Promemo $TAG_NAME release binaries."
-          gh release upload "$TAG_NAME" dist/* --clobber
+          gh release view "$TAG_NAME" --repo "$REPO_NAME" >/dev/null 2>&1 || \
+            gh release create "$TAG_NAME" --repo "$REPO_NAME" --title "$TAG_NAME" --notes "Promemo $TAG_NAME release binaries."
+          gh release upload "$TAG_NAME" dist/* --repo "$REPO_NAME" --clobber
