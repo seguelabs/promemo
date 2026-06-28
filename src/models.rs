@@ -397,6 +397,18 @@ pub struct SaveReport {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MemorySaveRequest {
+    pub feature: String,
+    pub memory: MemoryInput,
+}
+
+impl MemorySaveRequest {
+    pub fn from_reader(reader: impl Read) -> anyhow::Result<Self> {
+        Ok(serde_json::from_reader(reader)?)
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LoadedContext {
     pub feature: String,
     pub text: String,

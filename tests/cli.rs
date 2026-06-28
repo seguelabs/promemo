@@ -132,6 +132,97 @@ fn binary_schema_memory_input_prints_json_schema() {
 }
 
 #[test]
+fn binary_memory_preview_reads_request_json_without_writing() {
+    let dir = tempfile::tempdir().unwrap();
+
+    let init = promemo()
+        .arg("init")
+        .current_dir(dir.path())
+        .output()
+        .unwrap();
+    assert!(init.status.success());
+
+    let request = serde_json::json!({
+        "feature": "authentication",
+        "memory": serde_json::from_slice::<serde_json::Value>(include_bytes!("../examples/memory.json")).unwrap()
+    });
+
+    let mut preview = promemo()
+        .args(["memory", "preview"])
+        .current_dir(dir.path())
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .unwrap();
+    preview
+        .stdin
+        .as_mut()
+        .unwrap()
+        .write_all(serde_json::to_string(&request).unwrap().as_bytes())
+        .unwrap();
+    let output = preview.wait_with_output().unwrap();
+
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let report: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
+    assert_eq!(report["feature"], "authentication");
+    assert_eq!(report["dry_run"], true);
+    assert!(!dir
+        .path()
+        .join(".promemo/features/authentication/memory.md")
+        .exists());
+}
+
+#[test]
+fn binary_memory_save_reads_request_json_and_writes_memory() {
+    let dir = tempfile::tempdir().unwrap();
+
+    let init = promemo()
+        .arg("init")
+        .current_dir(dir.path())
+        .output()
+        .unwrap();
+    assert!(init.status.success());
+
+    let request = serde_json::json!({
+        "feature": "authentication",
+        "memory": serde_json::from_slice::<serde_json::Value>(include_bytes!("../examples/memory.json")).unwrap()
+    });
+
+    let mut save = promemo()
+        .args(["memory", "save"])
+        .current_dir(dir.path())
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .unwrap();
+    save.stdin
+        .as_mut()
+        .unwrap()
+        .write_all(serde_json::to_string(&request).unwrap().as_bytes())
+        .unwrap();
+    let output = save.wait_with_output().unwrap();
+
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let report: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
+    assert_eq!(report["feature"], "authentication");
+    assert_eq!(report["dry_run"], false);
+    assert!(dir
+        .path()
+        .join(".promemo/features/authentication/memory.md")
+        .exists());
+}
+
+#[test]
 fn binary_commands_work_from_repo_subdirectories() {
     let dir = tempfile::tempdir().unwrap();
     let nested = dir.path().join("src/auth");
