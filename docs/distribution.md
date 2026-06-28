@@ -8,7 +8,7 @@ package managers once release artifacts are stable.
 The CLI version is the Cargo package version in `Cargo.toml`:
 
 ```toml
-version = "0.3.4"
+version = "0.3.5"
 ```
 
 The CLI exposes that value with:
@@ -20,8 +20,8 @@ promemo --version
 Release tags should match the Cargo version with a leading `v`:
 
 ```txt
-Cargo.toml: 0.3.4
-Git tag:    v0.3.4
+Cargo.toml: 0.3.5
+Git tag:    v0.3.5
 ```
 
 ## Release Flow
@@ -42,8 +42,8 @@ Git tag:    v0.3.4
 6. Tag the release commit:
 
    ```bash
-   git tag v0.3.4
-   git push origin v0.3.4
+   git tag v0.3.5
+   git push origin v0.3.5
    ```
 
 7. Confirm the `Release` workflow completes and attaches platform archives to
@@ -55,13 +55,13 @@ This is the first supported distribution path because it needs no external
 registry setup:
 
 ```bash
-cargo install --git https://github.com/bhagath-krishna/promemo.git --tag v0.3.4
+cargo install --git https://github.com/bhagath-krishna/promemo.git --tag v0.3.5
 ```
 
 Update to a newer tag:
 
 ```bash
-cargo install --git https://github.com/bhagath-krishna/promemo.git --tag v0.3.4 --force
+cargo install --git https://github.com/bhagath-krishna/promemo.git --tag v0.3.5 --force
 ```
 
 ## GitHub Releases
@@ -74,7 +74,6 @@ Initial target artifacts:
 
 ```txt
 promemo-aarch64-apple-darwin.tar.gz
-promemo-x86_64-apple-darwin.tar.gz
 promemo-x86_64-unknown-linux-gnu.tar.gz
 promemo-x86_64-pc-windows-msvc.zip
 SHA256SUMS
@@ -107,7 +106,7 @@ Formula template:
 class Promemo < Formula
   desc "Git-native project memory for AI-assisted development"
   homepage "https://github.com/bhagath-krishna/promemo"
-  url "https://github.com/bhagath-krishna/promemo/archive/refs/tags/v0.3.4.tar.gz"
+  url "https://github.com/bhagath-krishna/promemo/archive/refs/tags/v0.3.5.tar.gz"
   sha256 "REPLACE_WITH_RELEASE_TARBALL_SHA"
   license "MIT"
 

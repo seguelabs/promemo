@@ -26,11 +26,6 @@ jobs:
             artifact: promemo-x86_64-unknown-linux-gnu
             archive: tar.gz
             binary: promemo
-          - os: macos-13
-            target: x86_64-apple-darwin
-            artifact: promemo-x86_64-apple-darwin
-            archive: tar.gz
-            binary: promemo
           - os: macos-14
             target: aarch64-apple-darwin
             artifact: promemo-aarch64-apple-darwin
