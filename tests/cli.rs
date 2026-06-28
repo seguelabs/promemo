@@ -114,6 +114,24 @@ fn binary_save_json_prints_human_success_output() {
 }
 
 #[test]
+fn binary_schema_memory_input_prints_json_schema() {
+    let output = promemo().args(["schema", "memory-input"]).output().unwrap();
+
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let schema: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
+    assert_eq!(schema["title"], "Promemo MemoryInput");
+    assert_eq!(schema["additionalProperties"], false);
+    assert_eq!(
+        schema["properties"]["todos"]["items"]["properties"]["priority"]["enum"][2],
+        "high"
+    );
+}
+
+#[test]
 fn binary_commands_work_from_repo_subdirectories() {
     let dir = tempfile::tempdir().unwrap();
     let nested = dir.path().join("src/auth");

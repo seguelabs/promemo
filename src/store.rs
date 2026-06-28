@@ -68,6 +68,7 @@ pub fn save_memory_with_report(
     memory: &MemoryInput,
 ) -> anyhow::Result<SaveReport> {
     ensure_initialized(repo)?;
+    memory.validate()?;
     let slug = normalize_feature(feature)?;
     let root = memory_root(repo);
     let feature_dir = root.join("features").join(&slug);
@@ -110,6 +111,7 @@ pub fn preview_memory_save(
     memory: &MemoryInput,
 ) -> anyhow::Result<SaveReport> {
     ensure_initialized(repo)?;
+    memory.validate()?;
     let slug = normalize_feature(feature)?;
     let root = memory_root(repo);
     let mut files_written = render::render_feature_files(memory)

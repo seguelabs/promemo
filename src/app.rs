@@ -1,4 +1,4 @@
-use crate::cli::{Cli, Command, ImportCommand};
+use crate::cli::{Cli, Command, ImportCommand, SchemaCommand};
 use crate::{git_snapshot, handoff, index, models, render, search, store};
 use anyhow::{bail, Context, Result};
 use std::io::{Read, Write};
@@ -17,6 +17,15 @@ pub fn run_with_io(
 ) -> Result<()> {
     match cli.command {
         Command::Init => store::init_repo(cwd)?,
+        Command::Schema { command } => match command {
+            SchemaCommand::MemoryInput => {
+                writeln!(
+                    stdout,
+                    "{}",
+                    serde_json::to_string_pretty(&models::memory_input_schema())?
+                )?;
+            }
+        },
         Command::SaveJson { feature, dry_run } => {
             let repo = store::find_repo_root(cwd)?;
             let memory = models::MemoryInput::from_reader(stdin)
