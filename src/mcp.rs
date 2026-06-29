@@ -383,9 +383,14 @@ fn read_message(reader: &mut impl Read) -> anyhow::Result<Option<String>> {
     let mut byte = [0_u8; 1];
     loop {
         match reader.read(&mut byte)? {
-            0 if header.is_empty() => return Ok(None),
+            0 if header.is_empty() || header.iter().all(u8::is_ascii_whitespace) => {
+                return Ok(None)
+            }
             0 => bail!("incomplete MCP message header"),
             _ => {
+                if header.is_empty() && byte[0].is_ascii_whitespace() {
+                    continue;
+                }
                 header.push(byte[0]);
                 if header.ends_with(b"\r\n\r\n") || header.ends_with(b"\n\n") {
                     break;
@@ -397,7 +402,10 @@ fn read_message(reader: &mut impl Read) -> anyhow::Result<Option<String>> {
     let header = String::from_utf8(header).context("MCP header was not UTF-8")?;
     let content_length = header
         .lines()
-        .find_map(|line| line.strip_prefix("Content-Length:"))
+        .find_map(|line| {
+            let (name, value) = line.split_once(':')?;
+            name.eq_ignore_ascii_case("Content-Length").then_some(value)
+        })
         .map(str::trim)
         .context("MCP message missing Content-Length header")?
         .parse::<usize>()
@@ -503,6 +511,35 @@ mod tests {
         assert!(output.contains("Content-Length:"));
         assert!(output.contains("\"serverInfo\""));
         assert!(output.contains("\"promemo\""));
+    }
+
+    #[test]
+    fn mcp_reader_tolerates_blank_input_before_header() {
+        let request = json!({
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "initialize",
+            "params": {}
+        })
+        .to_string();
+        let input = format!("\n\ncontent-length: {}\r\n\r\n{}", request.len(), request);
+        let mut output = Vec::new();
+
+        serve(Path::new("."), &mut input.as_bytes(), &mut output).unwrap();
+
+        let output = String::from_utf8(output).unwrap();
+        assert!(output.contains("Content-Length:"));
+        assert!(output.contains("\"serverInfo\""));
+    }
+
+    #[test]
+    fn mcp_reader_treats_blank_input_as_clean_shutdown() {
+        let input = "\n\n";
+        let mut output = Vec::new();
+
+        serve(Path::new("."), &mut input.as_bytes(), &mut output).unwrap();
+
+        assert!(output.is_empty());
     }
 
     #[test]
