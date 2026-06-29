@@ -79,12 +79,51 @@ promemo-x86_64-pc-windows-msvc.zip
 SHA256SUMS
 ```
 
-Those artifacts become the source for Homebrew and npm wrappers.
+Those artifacts become the source for npm and Homebrew wrappers.
+
+## npm
+
+npm is the first package-manager distribution target for Promemo because it gives
+AI-tool users a quick cross-platform path to `npx promemo` and global installs.
+
+Expected user flow:
+
+```bash
+npx promemo --version
+npx promemo init
+npm install -g promemo
+promemo --version
+npm update -g promemo
+```
+
+Implementation path:
+
+1. Publish GitHub release binaries.
+2. Keep `npm/promemo/package.json` in sync with the Cargo version.
+3. Run `npm run prepare-binaries` from `npm/promemo` before publishing.
+4. The prepare script downloads all GitHub release artifacts, verifies them
+   against `SHA256SUMS`, and places the native binaries under `vendor/`.
+5. `npm publish` bundles those binaries directly in the npm package.
+6. The `promemo` npm bin selects the matching bundled binary for the user's
+   platform.
+
+Users do not need GitHub authentication when installing from npm.
+
+Publish from the npm package directory:
+
+```bash
+cd npm/promemo
+npm login
+npm run prepare-binaries
+npm publish
+```
+
+For scoped packages use `npm publish --access public`, but the unscoped
+`promemo` package does not need that flag.
 
 ## Homebrew
 
-Homebrew should be the first package-manager distribution target for Promemo
-because Promemo is a native Rust CLI.
+Homebrew can follow after npm for users who prefer native package managers.
 
 Expected user flow:
 
@@ -123,26 +162,3 @@ end
 ```
 
 Prebuilt bottles can come later.
-
-## npm
-
-npm distribution is useful for JavaScript-heavy workflows, but it should wrap a
-prebuilt Promemo binary rather than requiring every user to compile Rust.
-
-Expected user flow:
-
-```bash
-npm install -g promemo
-promemo --version
-npm update -g promemo
-```
-
-Implementation path:
-
-1. Publish GitHub release binaries.
-2. Add an npm package that detects platform and architecture.
-3. Download or depend on the matching binary package.
-4. Expose the binary through the package `bin` field.
-
-The npm wrapper should be added after the GitHub release artifact layout is
-stable.
