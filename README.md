@@ -48,10 +48,24 @@ starts at [`docs/roadmap/README.md`](docs/roadmap/README.md).
 
 ## Quick Start
 
-Install the latest released tag from GitHub:
+Run with npm without a global install:
 
 ```bash
-cargo install --git https://github.com/bhagath-krishna/promemo.git --tag v0.3.6
+npx promemo --version
+npx promemo init
+```
+
+Or install globally:
+
+```bash
+npm install -g promemo
+promemo --version
+```
+
+Install the latest released tag from GitHub with Cargo:
+
+```bash
+cargo install --git https://github.com/bhagath-krishna/promemo.git --tag v0.3.7
 ```
 
 Or install from a local checkout:
@@ -172,14 +186,14 @@ cargo run -- init
 Promemo's CLI version comes from `Cargo.toml`:
 
 ```toml
-version = "0.3.6"
+version = "0.3.7"
 ```
 
 For a release, update that version, tag the matching commit, and reinstall from
 the checkout:
 
 ```bash
-git tag v0.3.6
+git tag v0.3.7
 cargo install --path .
 promemo --version
 ```
@@ -187,7 +201,7 @@ promemo --version
 Install or update from a release tag:
 
 ```bash
-cargo install --git https://github.com/bhagath-krishna/promemo.git --tag v0.3.6 --force
+cargo install --git https://github.com/bhagath-krishna/promemo.git --tag v0.3.7 --force
 ```
 
 Homebrew and npm distribution are planned after GitHub release artifacts are
