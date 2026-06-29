@@ -48,7 +48,21 @@ starts at [`docs/roadmap/README.md`](docs/roadmap/README.md).
 
 ## Quick Start
 
-Install the latest released tag from GitHub:
+Run with npm without a global install:
+
+```bash
+npx promemo --version
+npx promemo init
+```
+
+Or install globally:
+
+```bash
+npm install -g promemo
+promemo --version
+```
+
+Install the latest released tag from GitHub with Cargo:
 
 ```bash
 cargo install --git https://github.com/bhagath-krishna/promemo.git --tag v0.3.6
