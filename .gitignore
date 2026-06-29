@@ -9,3 +9,6 @@
 *.swp
 *.swo
 *.tmp
+/npm/promemo/vendor/darwin-arm64/promemo
+/npm/promemo/vendor/linux-x64/promemo
+/npm/promemo/vendor/win32-x64/promemo.exe

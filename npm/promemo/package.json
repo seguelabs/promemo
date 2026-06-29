@@ -1,0 +1,40 @@
+{
+  "name": "promemo",
+  "version": "0.3.6",
+  "description": "Git-native project memory for AI-assisted development",
+  "license": "MIT",
+  "homepage": "https://github.com/bhagath-krishna/promemo#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bhagath-krishna/promemo.git",
+    "directory": "npm/promemo"
+  },
+  "bugs": {
+    "url": "https://github.com/bhagath-krishna/promemo/issues"
+  },
+  "bin": {
+    "promemo": "bin/promemo.js"
+  },
+  "files": [
+    "bin",
+    "scripts",
+    "vendor",
+    "README.md"
+  ],
+  "scripts": {
+    "prepare-binaries": "node scripts/prepare-binaries.js",
+    "prepack": "node scripts/check-binaries.js",
+    "test": "node --check bin/promemo.js && node --check scripts/check-binaries.js && node --check scripts/prepare-binaries.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "ai",
+    "cli",
+    "cursor",
+    "mcp",
+    "memory",
+    "promemo"
+  ]
+}
