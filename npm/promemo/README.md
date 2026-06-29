@@ -43,4 +43,4 @@ After installing globally, configure an MCP client with:
 }
 ```
 
-Project: <https://github.com/bhagath-krishna/promemo>
+Project: <https://github.com/seguelabsai/promemo>
