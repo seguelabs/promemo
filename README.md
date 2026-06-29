@@ -39,12 +39,10 @@ it.
 
 ## Current Phase
 
-This repository starts with the docs-first foundation and a small single-crate
-Rust MVP. The long-form product and architecture guide lives at
-[`docs/vision.md`](docs/vision.md), the memory-engine addendum lives at
-[`docs/vision-p2.md`](docs/vision-p2.md), assistant workflow guidance lives at
-[`docs/assistant-usage.md`](docs/assistant-usage.md), and the versioned roadmap
-starts at [`docs/roadmap/README.md`](docs/roadmap/README.md).
+This repository contains the Promemo CLI, MCP server, public usage guidance, and
+distribution notes. Assistant workflow guidance lives at
+[`docs/assistant-usage.md`](docs/assistant-usage.md), and package/release
+details live at [`docs/distribution.md`](docs/distribution.md).
 
 ## Quick Start
 
