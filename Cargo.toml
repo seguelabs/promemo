@@ -1,6 +1,6 @@
 [package]
 name = "promemo"
-version = "0.3.7"
+version = "0.3.8"
 edition = "2021"
 description = "Git-native project memory for AI-assisted development"
 license = "MIT"

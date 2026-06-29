@@ -379,18 +379,34 @@ fn string_schema(description: &str) -> Value {
 }
 
 fn read_message(reader: &mut impl Read) -> anyhow::Result<Option<String>> {
-    let mut header = Vec::new();
     let mut byte = [0_u8; 1];
+    let first = loop {
+        match reader.read(&mut byte)? {
+            0 => return Ok(None),
+            _ if byte[0].is_ascii_whitespace() => continue,
+            _ => break byte[0],
+        }
+    };
+
+    if first == b'{' {
+        let mut body = vec![first];
+        loop {
+            match reader.read(&mut byte)? {
+                0 => break,
+                _ if byte[0] == b'\n' => break,
+                _ => body.push(byte[0]),
+            }
+        }
+        return Ok(Some(
+            String::from_utf8(body).context("MCP body was not UTF-8")?,
+        ));
+    }
+
+    let mut header = vec![first];
     loop {
         match reader.read(&mut byte)? {
-            0 if header.is_empty() || header.iter().all(u8::is_ascii_whitespace) => {
-                return Ok(None)
-            }
             0 => bail!("incomplete MCP message header"),
             _ => {
-                if header.is_empty() && byte[0].is_ascii_whitespace() {
-                    continue;
-                }
                 header.push(byte[0]);
                 if header.ends_with(b"\r\n\r\n") || header.ends_with(b"\n\n") {
                     break;
@@ -420,7 +436,7 @@ fn read_message(reader: &mut impl Read) -> anyhow::Result<Option<String>> {
 
 fn write_message(writer: &mut impl Write, value: &Value) -> anyhow::Result<()> {
     let body = serde_json::to_string(value)?;
-    write!(writer, "Content-Length: {}\r\n\r\n{}", body.len(), body)?;
+    writeln!(writer, "{}", body)?;
     Ok(())
 }
 
@@ -494,7 +510,27 @@ mod tests {
     use super::*;
 
     #[test]
-    fn mcp_initialize_uses_content_length_framing() {
+    fn mcp_initialize_uses_newline_json_framing() {
+        let input = json!({
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "initialize",
+            "params": {}
+        })
+        .to_string()
+            + "\n";
+        let mut output = Vec::new();
+
+        serve(Path::new("."), &mut input.as_bytes(), &mut output).unwrap();
+
+        let output = String::from_utf8(output).unwrap();
+        assert!(output.ends_with('\n'));
+        assert!(output.contains("\"serverInfo\""));
+        assert!(output.contains("\"promemo\""));
+    }
+
+    #[test]
+    fn mcp_reader_accepts_content_length_framing() {
         let request = json!({
             "jsonrpc": "2.0",
             "id": 1,
@@ -508,7 +544,6 @@ mod tests {
         serve(Path::new("."), &mut input.as_bytes(), &mut output).unwrap();
 
         let output = String::from_utf8(output).unwrap();
-        assert!(output.contains("Content-Length:"));
         assert!(output.contains("\"serverInfo\""));
         assert!(output.contains("\"promemo\""));
     }
@@ -528,7 +563,6 @@ mod tests {
         serve(Path::new("."), &mut input.as_bytes(), &mut output).unwrap();
 
         let output = String::from_utf8(output).unwrap();
-        assert!(output.contains("Content-Length:"));
         assert!(output.contains("\"serverInfo\""));
     }
 
