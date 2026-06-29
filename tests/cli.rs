@@ -992,24 +992,8 @@ fn mcp_frame(value: serde_json::Value) -> String {
 
 fn parse_mcp_frames(output: &[u8]) -> Vec<serde_json::Value> {
     let text = String::from_utf8(output.to_vec()).unwrap();
-    let mut rest = text.as_str();
-    let mut values = Vec::new();
-
-    while !rest.is_empty() {
-        let header_end = rest.find("\r\n\r\n").unwrap();
-        let header = &rest[..header_end];
-        let length = header
-            .lines()
-            .find_map(|line| line.strip_prefix("Content-Length:"))
-            .unwrap()
-            .trim()
-            .parse::<usize>()
-            .unwrap();
-        let body_start = header_end + 4;
-        let body_end = body_start + length;
-        values.push(serde_json::from_str(&rest[body_start..body_end]).unwrap());
-        rest = &rest[body_end..];
-    }
-
-    values
+    text.lines()
+        .filter(|line| !line.trim().is_empty())
+        .map(|line| serde_json::from_str(line).unwrap())
+        .collect()
 }
