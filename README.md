@@ -65,7 +65,7 @@ promemo --version
 Install the latest released tag from GitHub with Cargo:
 
 ```bash
-cargo install --git https://github.com/bhagath-krishna/promemo.git --tag v0.3.8
+cargo install --git https://github.com/seguelabsai/promemo.git --tag v0.3.8
 ```
 
 Or install from a local checkout:
@@ -201,7 +201,7 @@ promemo --version
 Install or update from a release tag:
 
 ```bash
-cargo install --git https://github.com/bhagath-krishna/promemo.git --tag v0.3.8 --force
+cargo install --git https://github.com/seguelabsai/promemo.git --tag v0.3.8 --force
 ```
 
 Homebrew and npm distribution are planned after GitHub release artifacts are

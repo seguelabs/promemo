@@ -55,13 +55,13 @@ This is the first supported distribution path because it needs no external
 registry setup:
 
 ```bash
-cargo install --git https://github.com/bhagath-krishna/promemo.git --tag v0.3.8
+cargo install --git https://github.com/seguelabsai/promemo.git --tag v0.3.8
 ```
 
 Update to a newer tag:
 
 ```bash
-cargo install --git https://github.com/bhagath-krishna/promemo.git --tag v0.3.8 --force
+cargo install --git https://github.com/seguelabsai/promemo.git --tag v0.3.8 --force
 ```
 
 ## GitHub Releases
@@ -128,7 +128,7 @@ Homebrew can follow after npm for users who prefer native package managers.
 Expected user flow:
 
 ```bash
-brew install bhagath-krishna/tap/promemo
+brew install seguelabsai/tap/promemo
 brew upgrade promemo
 ```
 
@@ -144,8 +144,8 @@ Formula template:
 ```ruby
 class Promemo < Formula
   desc "Git-native project memory for AI-assisted development"
-  homepage "https://github.com/bhagath-krishna/promemo"
-  url "https://github.com/bhagath-krishna/promemo/archive/refs/tags/v0.3.8.tar.gz"
+  homepage "https://github.com/seguelabsai/promemo"
+  url "https://github.com/seguelabsai/promemo/archive/refs/tags/v0.3.8.tar.gz"
   sha256 "REPLACE_WITH_RELEASE_TARBALL_SHA"
   license "MIT"
 
