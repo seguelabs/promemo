@@ -161,6 +161,49 @@ Provider extraction previews return both the exact generated `MemoryInput` and
 the save report, so assistants can ask for approval and then save the reviewed
 memory with `promemo_save_memory`.
 
+### MCP Client Configuration
+
+Promemo runs as one local stdio MCP server. You do not need one Promemo config
+per model provider; you only need the JSON shape expected by your MCP host app.
+
+For Cursor, Claude Desktop, Cline, Roo Code, Windsurf, Antigravity, and many
+other MCP hosts that use the common `mcpServers` shape:
+
+```json
+{
+  "mcpServers": {
+    "promemo": {
+      "command": "promemo",
+      "args": ["mcp"]
+    }
+  }
+}
+```
+
+For VS Code MCP user configuration:
+
+```json
+{
+  "servers": {
+    "promemo": {
+      "type": "stdio",
+      "command": "promemo",
+      "args": ["mcp"]
+    }
+  }
+}
+```
+
+If a host app cannot find `promemo` on `PATH`, replace `"promemo"` with the
+absolute path from:
+
+```bash
+which promemo
+```
+
+See [`docs/assistant-usage.md`](docs/assistant-usage.md) for a fuller host
+configuration guide.
+
 Preview repository state for a feature:
 
 ```bash

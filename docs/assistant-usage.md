@@ -30,6 +30,162 @@ The explicit import form is equivalent:
 promemo import handoff handoff.md --feature <feature>
 ```
 
+## MCP Client Configuration
+
+Promemo is a local stdio MCP server:
+
+```bash
+promemo mcp
+```
+
+You do not need a separate Promemo server per AI model provider. OpenAI,
+Anthropic, Gemini, local models, and hosted models can all use the same Promemo
+MCP server when the host app supports MCP. What changes is the config shape used
+by each host app.
+
+Install Promemo first:
+
+```bash
+npm install -g promemo@latest
+promemo --version
+```
+
+If the host app cannot find `promemo`, get the absolute path:
+
+```bash
+which promemo
+```
+
+Then use that path as the `command` value.
+
+### Cursor
+
+Add Promemo to Cursor's MCP config:
+
+```json
+{
+  "mcpServers": {
+    "promemo": {
+      "command": "promemo",
+      "args": ["mcp"]
+    }
+  }
+}
+```
+
+### VS Code
+
+Open `MCP: Open User Configuration`, then add:
+
+```json
+{
+  "servers": {
+    "promemo": {
+      "type": "stdio",
+      "command": "promemo",
+      "args": ["mcp"]
+    }
+  }
+}
+```
+
+### Claude Desktop
+
+Add Promemo to the Claude Desktop MCP config:
+
+```json
+{
+  "mcpServers": {
+    "promemo": {
+      "command": "promemo",
+      "args": ["mcp"]
+    }
+  }
+}
+```
+
+### Claude Code
+
+Claude Code can add a stdio MCP server from the command line:
+
+```bash
+claude mcp add promemo -- promemo mcp
+```
+
+If `promemo` is not on `PATH`, use the absolute binary path:
+
+```bash
+claude mcp add promemo -- /absolute/path/to/promemo mcp
+```
+
+### Cline and Roo Code
+
+Cline and Roo Code use the common `mcpServers` shape:
+
+```json
+{
+  "mcpServers": {
+    "promemo": {
+      "command": "promemo",
+      "args": ["mcp"]
+    }
+  }
+}
+```
+
+### Windsurf and Antigravity
+
+Many MCP-capable editors use the same `mcpServers` shape:
+
+```json
+{
+  "mcpServers": {
+    "promemo": {
+      "command": "promemo",
+      "args": ["mcp"]
+    }
+  }
+}
+```
+
+If your host app is based on VS Code's MCP user configuration, use the VS Code
+`servers` shape instead.
+
+### Generic Stdio MCP Host
+
+For tools that ask only for the stdio command:
+
+```json
+{
+  "command": "promemo",
+  "args": ["mcp"]
+}
+```
+
+### Absolute Path Example
+
+If global npm binaries are not visible to the host app:
+
+```json
+{
+  "mcpServers": {
+    "promemo": {
+      "command": "/Users/bk/.npm-global/bin/promemo",
+      "args": ["mcp"]
+    }
+  }
+}
+```
+
+Replace the path with the result from `which promemo` on your machine.
+
+### Provider API Keys
+
+Basic Promemo MCP tools do not require provider API keys. Provider keys are only
+needed for commands that ask Promemo to call an LLM provider, such as extraction
+from messy notes. Configure those through `.promemo/config.toml` and the
+environment variable named in that config.
+
 ## Handoff Template
 
 ```md
