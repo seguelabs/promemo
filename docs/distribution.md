@@ -171,7 +171,7 @@ class Promemo < Formula
   desc "Git-native project memory for AI-assisted development"
   homepage "https://github.com/seguelabs/promemo"
   url "https://github.com/seguelabs/promemo/archive/refs/tags/v0.4.0.tar.gz"
-  sha256 "REPLACE_WITH_V0_4_0_SOURCE_TARBALL_SHA"
+  sha256 "989b4f4cdc60436f7d230ae2b2e48e1c46c23716fc307f131d51aed1169dbfb0"
   license "MIT"
 
   depends_on "rust" => :build
@@ -187,7 +187,7 @@ class Promemo < Formula
 end
 ```
 
-After tagging, compute the source tarball SHA:
+For future releases, compute the source tarball SHA after tagging:
 
 ```bash
 curl -L -o /tmp/promemo-v0.4.0.tar.gz https://github.com/seguelabs/promemo/archive/refs/tags/v0.4.0.tar.gz
