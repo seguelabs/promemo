@@ -548,6 +548,156 @@ fn binary_search_reports_no_matches_in_human_mode() {
 }
 
 #[test]
+fn binary_completions_and_docs_are_generated_from_cli() {
+    let completions = promemo().args(["completions", "bash"]).output().unwrap();
+    assert!(
+        completions.status.success(),
+        "{}",
+        String::from_utf8_lossy(&completions.stderr)
+    );
+    assert!(String::from_utf8_lossy(&completions.stdout).contains("_promemo"));
+
+    let docs = promemo().arg("docs").output().unwrap();
+    assert!(
+        docs.status.success(),
+        "{}",
+        String::from_utf8_lossy(&docs.stderr)
+    );
+    let text = String::from_utf8_lossy(&docs.stdout);
+    assert!(text.contains("# Promemo CLI Usage"));
+    assert!(text.contains("### `search`"));
+}
+
+#[test]
+fn binary_index_rebuild_status_and_hybrid_search_work() {
+    let dir = tempfile::tempdir().unwrap();
+    let init = promemo()
+        .arg("init")
+        .current_dir(dir.path())
+        .output()
+        .unwrap();
+    assert!(init.status.success());
+
+    let mut save = promemo()
+        .args(["save-json", "authentication"])
+        .current_dir(dir.path())
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .unwrap();
+    save.stdin
+        .as_mut()
+        .unwrap()
+        .write_all(include_bytes!("../examples/memory.json"))
+        .unwrap();
+    assert!(save.wait_with_output().unwrap().status.success());
+
+    let rebuild = promemo()
+        .args(["index", "rebuild", "--json"])
+        .current_dir(dir.path())
+        .output()
+        .unwrap();
+    assert!(
+        rebuild.status.success(),
+        "{}",
+        String::from_utf8_lossy(&rebuild.stderr)
+    );
+    let index: serde_json::Value = serde_json::from_slice(&rebuild.stdout).unwrap();
+    assert!(index["chunks"].as_array().unwrap().len() > 1);
+    assert!(dir.path().join(".promemo/cache/search-index.json").exists());
+
+    let status = promemo()
+        .args(["index", "status", "--json"])
+        .current_dir(dir.path())
+        .output()
+        .unwrap();
+    assert!(status.status.success());
+    let status_json: serde_json::Value = serde_json::from_slice(&status.stdout).unwrap();
+    assert_eq!(status_json["exists"], true);
+    assert!(status_json["chunks"].as_u64().unwrap() > 1);
+
+    let search = promemo()
+        .args([
+            "search",
+            "identity passkeys",
+            "--hybrid",
+            "--limit",
+            "3",
+            "--json",
+        ])
+        .current_dir(dir.path())
+        .output()
+        .unwrap();
+    assert!(search.status.success());
+    let matches: serde_json::Value = serde_json::from_slice(&search.stdout).unwrap();
+    assert!(!matches.as_array().unwrap().is_empty());
+    assert_eq!(matches[0]["feature"], "authentication");
+}
+
+#[test]
+fn binary_load_supports_related_features_and_token_budget() {
+    let dir = tempfile::tempdir().unwrap();
+    let init = promemo()
+        .arg("init")
+        .current_dir(dir.path())
+        .output()
+        .unwrap();
+    assert!(init.status.success());
+
+    for (feature, title) in [
+        ("authentication", "Authentication"),
+        ("session-store", "Session Store"),
+    ] {
+        let memory = serde_json::json!({
+            "title": title,
+            "summary": format!("{title} uses src/auth.rs for token handling and session state."),
+            "files": [
+                {
+                    "path": "src/auth.rs",
+                    "reason": "Shared token handling implementation."
+                }
+            ]
+        });
+        let mut save = promemo()
+            .args(["save-json", feature])
+            .current_dir(dir.path())
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
+            .unwrap();
+        save.stdin
+            .as_mut()
+            .unwrap()
+            .write_all(memory.to_string().as_bytes())
+            .unwrap();
+        assert!(save.wait_with_output().unwrap().status.success());
+    }
+
+    let output = promemo()
+        .args([
+            "load",
+            "authentication",
+            "--related",
+            "--token-budget",
+            "20",
+        ])
+        .current_dir(dir.path())
+        .output()
+        .unwrap();
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let text = String::from_utf8_lossy(&output.stdout);
+    assert!(text.contains("Related Features"));
+    assert!(text.contains("session-store"));
+    assert!(text.contains("truncated context"));
+}
+
+#[test]
 fn binary_open_missing_feature_reports_clear_error() {
     let dir = tempfile::tempdir().unwrap();
 
@@ -740,6 +890,33 @@ timeout_seconds = 1
     let save_output = save.wait_with_output().unwrap();
     assert!(save_output.status.success());
 
+    let related_memory = serde_json::json!({
+        "title": "Session Store",
+        "summary": "Session storage shares authentication middleware and token state.",
+        "files": [
+            {
+                "path": "src/auth/middleware.rs",
+                "reason": "Shares token validation state with authentication."
+            }
+        ]
+    });
+    let mut save_related = promemo()
+        .args(["save-json", "session-store"])
+        .current_dir(dir.path())
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .unwrap();
+    save_related
+        .stdin
+        .as_mut()
+        .unwrap()
+        .write_all(related_memory.to_string().as_bytes())
+        .unwrap();
+    let save_related_output = save_related.wait_with_output().unwrap();
+    assert!(save_related_output.status.success());
+
     let memory: serde_json::Value =
         serde_json::from_slice(include_bytes!("../examples/memory.json")).unwrap();
     let messages = [
@@ -859,6 +1036,70 @@ timeout_seconds = 1
             "id": 13,
             "method": "tools/call",
             "params": {
+                "name": "promemo_search_context",
+                "arguments": {
+                    "query": "identity passkeys",
+                    "mode": "hybrid",
+                    "limit": 3
+                }
+            }
+        })),
+        mcp_frame(serde_json::json!({
+            "jsonrpc": "2.0",
+            "id": 14,
+            "method": "tools/call",
+            "params": {
+                "name": "promemo_load_context",
+                "arguments": {
+                    "feature": "authentication",
+                    "related": true,
+                    "token_budget": 24
+                }
+            }
+        })),
+        mcp_frame(serde_json::json!({
+            "jsonrpc": "2.0",
+            "id": 15,
+            "method": "tools/call",
+            "params": {
+                "name": "promemo_index_status",
+                "arguments": {}
+            }
+        })),
+        mcp_frame(serde_json::json!({
+            "jsonrpc": "2.0",
+            "id": 16,
+            "method": "tools/call",
+            "params": {
+                "name": "promemo_index_rebuild",
+                "arguments": {}
+            }
+        })),
+        mcp_frame(serde_json::json!({
+            "jsonrpc": "2.0",
+            "id": 17,
+            "method": "tools/call",
+            "params": {
+                "name": "promemo_related_features",
+                "arguments": {
+                    "feature": "authentication"
+                }
+            }
+        })),
+        mcp_frame(serde_json::json!({
+            "jsonrpc": "2.0",
+            "id": 18,
+            "method": "tools/call",
+            "params": {
+                "name": "promemo_project_map",
+                "arguments": {}
+            }
+        })),
+        mcp_frame(serde_json::json!({
+            "jsonrpc": "2.0",
+            "id": 19,
+            "method": "tools/call",
+            "params": {
                 "name": "promemo_extract_memory",
                 "arguments": {
                     "feature": "extracted-auth",
@@ -868,13 +1109,13 @@ timeout_seconds = 1
         })),
         mcp_frame(serde_json::json!({
             "jsonrpc": "2.0",
-            "id": 14,
+            "id": 20,
             "method": "resources/list",
             "params": {}
         })),
         mcp_frame(serde_json::json!({
             "jsonrpc": "2.0",
-            "id": 15,
+            "id": 21,
             "method": "prompts/list",
             "params": {}
         })),
@@ -904,7 +1145,7 @@ timeout_seconds = 1
         String::from_utf8_lossy(&output.stderr)
     );
     let responses = parse_mcp_frames(&output.stdout);
-    assert_eq!(responses.len(), 15);
+    assert_eq!(responses.len(), 21);
     assert_eq!(responses[0]["result"]["serverInfo"]["name"], "promemo");
     assert!(responses[1]["result"]["tools"]
         .as_array()
@@ -921,6 +1162,16 @@ timeout_seconds = 1
         .unwrap()
         .iter()
         .any(|tool| tool["name"] == "promemo_read_feature_file"));
+    assert!(responses[1]["result"]["tools"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|tool| tool["name"] == "promemo_search_context"));
+    assert!(responses[1]["result"]["tools"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|tool| tool["name"] == "promemo_project_map"));
     assert!(responses[2]["result"]["content"][0]["text"]
         .as_str()
         .unwrap()
@@ -961,16 +1212,44 @@ timeout_seconds = 1
         .as_str()
         .unwrap()
         .contains("\"file\": \"memory.md\""));
-    assert!(responses[12]["error"]["message"]
+    assert!(responses[12]["result"]["content"][0]["text"]
+        .as_str()
+        .unwrap()
+        .contains("\"feature\": \"authentication\""));
+    assert!(responses[13]["result"]["content"][0]["text"]
+        .as_str()
+        .unwrap()
+        .contains("Related Features"));
+    assert!(responses[13]["result"]["content"][0]["text"]
+        .as_str()
+        .unwrap()
+        .contains("session-store"));
+    assert!(responses[14]["result"]["content"][0]["text"]
+        .as_str()
+        .unwrap()
+        .contains("\"exists\": true"));
+    assert!(responses[15]["result"]["content"][0]["text"]
+        .as_str()
+        .unwrap()
+        .contains("\"chunks\""));
+    assert!(responses[16]["result"]["content"][0]["text"]
+        .as_str()
+        .unwrap()
+        .contains("session-store"));
+    assert!(responses[17]["result"]["content"][0]["text"]
+        .as_str()
+        .unwrap()
+        .contains("src/auth/middleware.rs"));
+    assert!(responses[18]["error"]["message"]
         .as_str()
         .unwrap()
         .contains("PROMEMO_TEST_MCP_MISSING_API_KEY"));
-    assert!(responses[13]["result"]["resources"]
+    assert!(responses[19]["result"]["resources"]
         .as_array()
         .unwrap()
         .iter()
         .any(|resource| resource["uri"] == "promemo://features/authentication"));
-    assert!(responses[14]["result"]["prompts"]
+    assert!(responses[20]["result"]["prompts"]
         .as_array()
         .unwrap()
         .iter()

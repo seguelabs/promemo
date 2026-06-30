@@ -1,6 +1,7 @@
-use crate::cli::{Cli, Command, ImportCommand, MemoryCommand, SchemaCommand};
+use crate::cli::{Cli, Command, ImportCommand, IndexCommand, MemoryCommand, SchemaCommand};
 use crate::{config, git_snapshot, handoff, index, mcp, models, provider, render, search, store};
 use anyhow::{bail, Context, Result};
+use clap::CommandFactory;
 use std::io::{Read, Write};
 use std::path::Path;
 use std::process::Command as ProcessCommand;
@@ -18,6 +19,46 @@ pub fn run_with_io(
     match cli.command {
         Command::Init => store::init_repo(cwd)?,
         Command::Mcp => mcp::serve(cwd, stdin, stdout)?,
+        Command::Completions { shell } => {
+            let mut command = Cli::command();
+            clap_complete::generate(shell, &mut command, "promemo", stdout);
+        }
+        Command::Docs => {
+            write_cli_docs(stdout)?;
+        }
+        Command::Index { command } => {
+            let repo = store::find_repo_root(cwd)?;
+            match command {
+                IndexCommand::Rebuild { json } => {
+                    let built = search::rebuild_index(&repo)?;
+                    if json {
+                        writeln!(stdout, "{}", serde_json::to_string_pretty(&built)?)?;
+                    } else {
+                        writeln!(stdout, "Rebuilt search index")?;
+                        writeln!(stdout, "Chunks: {}", built.chunks.len())?;
+                        writeln!(stdout, "Features: {}", built.graph.features.len())?;
+                        writeln!(stdout, "Files: {}", built.graph.files.len())?;
+                        writeln!(stdout, "Decisions: {}", built.graph.decisions.len())?;
+                    }
+                }
+                IndexCommand::Status { json } => {
+                    let status = search::index_status(&repo)?;
+                    if json {
+                        writeln!(stdout, "{}", serde_json::to_string_pretty(&status)?)?;
+                    } else if status.exists {
+                        writeln!(stdout, "Search index: {}", status.path)?;
+                        writeln!(stdout, "Version: {}", status.version.unwrap_or_default())?;
+                        writeln!(stdout, "Chunks: {}", status.chunks)?;
+                        writeln!(stdout, "Features: {}", status.features)?;
+                        writeln!(stdout, "Files: {}", status.files)?;
+                        writeln!(stdout, "Decisions: {}", status.decisions)?;
+                    } else {
+                        writeln!(stdout, "Search index does not exist yet")?;
+                        writeln!(stdout, "Run: promemo index rebuild")?;
+                    }
+                }
+            }
+        }
         Command::Schema { command } => match command {
             SchemaCommand::MemoryInput => {
                 writeln!(
@@ -94,9 +135,20 @@ pub fn run_with_io(
                 write_save_report(stdout, &report, "Parsed handoff")?;
             }
         }
-        Command::Load { feature, json } => {
+        Command::Load {
+            feature,
+            token_budget,
+            related,
+            json,
+        } => {
             let repo = store::find_repo_root(cwd)?;
-            let context = store::load_context(&repo, &feature)?;
+            let mut context = store::load_context(&repo, &feature)?;
+            if let Some(budget) = token_budget {
+                context.text = token_budget_text(&context.text, budget);
+            }
+            if related {
+                append_related_features(&repo, &mut context, &feature)?;
+            }
             if json {
                 writeln!(stdout, "{}", serde_json::to_string_pretty(&context)?)?;
             } else {
@@ -123,16 +175,37 @@ pub fn run_with_io(
                 writeln!(stdout, "{}", entries.join("\n"))?;
             }
         }
-        Command::Search { query, json } => {
+        Command::Search {
+            query,
+            semantic,
+            hybrid,
+            limit,
+            json,
+        } => {
             let repo = store::find_repo_root(cwd)?;
-            let matches = search::keyword_search(&repo, &query)?;
+            let mode = if hybrid {
+                search::SearchMode::Hybrid
+            } else if semantic {
+                search::SearchMode::Semantic
+            } else {
+                search::SearchMode::Keyword
+            };
+            let matches = search::search(&repo, &query, mode, limit)?;
             if json {
                 writeln!(stdout, "{}", serde_json::to_string_pretty(&matches)?)?;
             } else if matches.is_empty() {
                 writeln!(stdout, "No memory found for \"{}\".", query)?;
             } else {
                 for item in matches {
-                    writeln!(stdout, "{}:{}: {}", item.path, item.line, item.snippet)?;
+                    let score = item
+                        .score
+                        .map(|value| format!(" score={value:.3}"))
+                        .unwrap_or_default();
+                    writeln!(
+                        stdout,
+                        "{}:{}{}: {}",
+                        item.path, item.line, score, item.snippet
+                    )?;
                 }
             }
         }
@@ -198,6 +271,65 @@ pub fn run_with_io(
     }
 
     Ok(())
+}
+
+fn write_cli_docs(stdout: &mut impl Write) -> Result<()> {
+    let mut command = Cli::command();
+    let help = command.render_long_help().to_string();
+    writeln!(stdout, "# Promemo CLI Usage\n")?;
+    writeln!(stdout, "Generated from `promemo --help`.\n")?;
+    writeln!(stdout, "```txt\n{}\n```", help.trim_end())?;
+    writeln!(stdout, "\n## Commands\n")?;
+    for subcommand in command.get_subcommands_mut() {
+        let name = subcommand.get_name().to_string();
+        let help = subcommand.render_long_help().to_string();
+        writeln!(stdout, "### `{}`\n", name)?;
+        writeln!(stdout, "```txt\n{}\n```\n", help.trim_end())?;
+    }
+    Ok(())
+}
+
+fn append_related_features(
+    repo: &Path,
+    context: &mut models::LoadedContext,
+    feature: &str,
+) -> Result<()> {
+    let related = search::related_features(repo, feature)?;
+    if related.is_empty() {
+        return Ok(());
+    }
+    let features = index::load_features(repo)?;
+    let mut by_name = std::collections::BTreeMap::new();
+    for item in features {
+        by_name.insert(item.name.clone(), item);
+    }
+    context.text.push_str("\n\n## Related Features\n\n");
+    for name in related {
+        if let Some(item) = by_name.get(&name) {
+            context
+                .text
+                .push_str(&format!("- `{}`: {}\n", item.name, item.summary));
+        } else {
+            context.text.push_str(&format!("- `{}`\n", name));
+        }
+    }
+    Ok(())
+}
+
+fn token_budget_text(text: &str, budget: usize) -> String {
+    if budget == 0 {
+        return String::new();
+    }
+    let mut words = text.split_whitespace().collect::<Vec<_>>();
+    if words.len() <= budget {
+        return text.to_string();
+    }
+    words.truncate(budget);
+    format!(
+        "{}\n\n[Promemo truncated context to approximately {} tokens.]",
+        words.join(" "),
+        budget
+    )
 }
 
 fn save_handoff(

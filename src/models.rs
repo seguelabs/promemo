@@ -418,6 +418,12 @@ pub struct LoadedContext {
 pub struct SearchMatch {
     pub path: String,
     pub line: usize,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub line_end: Option<usize>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub feature: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub score: Option<f32>,
     pub snippet: String,
 }
 
