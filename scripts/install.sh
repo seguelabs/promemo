@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 set -eu
 
-REPO="${PROMEMO_REPO:-seguelabsai/promemo}"
+REPO="${PROMEMO_REPO:-seguelabs/promemo}"
 TAG="${PROMEMO_VERSION:-latest}"
 INSTALL_DIR="${PROMEMO_INSTALL_DIR:-$HOME/.local/bin}"
 

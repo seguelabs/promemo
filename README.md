@@ -63,13 +63,13 @@ promemo --version
 Install the latest release binary directly:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/seguelabsai/promemo/main/scripts/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/seguelabs/promemo/main/scripts/install.sh | sh
 ```
 
 Install the latest released tag from GitHub with Cargo:
 
 ```bash
-cargo install --git https://github.com/seguelabsai/promemo.git --tag v0.3.9
+cargo install --git https://github.com/seguelabs/promemo.git --tag v0.3.9
 ```
 
 Or install from a local checkout:
@@ -272,7 +272,7 @@ promemo --version
 Install or update from a release tag:
 
 ```bash
-cargo install --git https://github.com/seguelabsai/promemo.git --tag v0.3.9 --force
+cargo install --git https://github.com/seguelabs/promemo.git --tag v0.3.9 --force
 ```
 
 npm and GitHub release binaries are available now. A Homebrew formula seed lives

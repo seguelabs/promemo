@@ -55,13 +55,13 @@ This is the first supported distribution path because it needs no external
 registry setup:
 
 ```bash
-cargo install --git https://github.com/seguelabsai/promemo.git --tag v0.3.9
+cargo install --git https://github.com/seguelabs/promemo.git --tag v0.3.9
 ```
 
 Update to a newer tag:
 
 ```bash
-cargo install --git https://github.com/seguelabsai/promemo.git --tag v0.3.9 --force
+cargo install --git https://github.com/seguelabs/promemo.git --tag v0.3.9 --force
 ```
 
 ## GitHub Releases
@@ -86,7 +86,7 @@ Those artifacts become the source for npm and Homebrew wrappers.
 Users can install the latest release binary without cloning the repository:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/seguelabsai/promemo/main/scripts/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/seguelabs/promemo/main/scripts/install.sh | sh
 ```
 
 The script:
@@ -152,7 +152,8 @@ Homebrew support starts from the formula seed in
 Expected user flow:
 
 ```bash
-brew install seguelabsai/tap/promemo
+brew tap seguelabs/tap
+brew install promemo
 brew upgrade promemo
 ```
 
@@ -168,8 +169,8 @@ Current formula seed:
 ```ruby
 class Promemo < Formula
   desc "Git-native project memory for AI-assisted development"
-  homepage "https://github.com/seguelabsai/promemo"
-  url "https://github.com/seguelabsai/promemo/archive/refs/tags/v0.3.9.tar.gz"
+  homepage "https://github.com/seguelabs/promemo"
+  url "https://github.com/seguelabs/promemo/archive/refs/tags/v0.3.9.tar.gz"
   sha256 "78d08a7701b784903e9a48c646bf5832b9b5dc554f47af1f8e5f4e8ee9a6251d"
   license "MIT"
 

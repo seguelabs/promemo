@@ -3,14 +3,14 @@
   "version": "0.3.9",
   "description": "Git-native project memory for AI-assisted development",
   "license": "MIT",
-  "homepage": "https://github.com/seguelabsai/promemo#readme",
+  "homepage": "https://github.com/seguelabs/promemo#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/seguelabsai/promemo.git",
+    "url": "git+https://github.com/seguelabs/promemo.git",
     "directory": "npm/promemo"
   },
   "bugs": {
-    "url": "https://github.com/seguelabsai/promemo/issues"
+    "url": "https://github.com/seguelabs/promemo/issues"
   },
   "bin": {
     "promemo": "bin/promemo.js"

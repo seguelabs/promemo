@@ -26,7 +26,7 @@ if (!fs.existsSync(binaryPath)) {
       "",
       "This package may have been published without bundled native binaries.",
       "Please reinstall or report this at:",
-      "  https://github.com/seguelabsai/promemo/issues",
+      "  https://github.com/seguelabs/promemo/issues",
     ].join("\n"),
   );
   process.exit(1);
