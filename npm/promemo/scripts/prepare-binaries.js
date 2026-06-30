@@ -9,7 +9,7 @@ const { spawnSync } = require("child_process");
 
 const packageJson = require("../package.json");
 
-const repo = "seguelabsai/promemo";
+const repo = "seguelabs/promemo";
 const version = packageJson.version;
 const tag = `v${version}`;
 const vendorDir = path.join(__dirname, "..", "vendor");

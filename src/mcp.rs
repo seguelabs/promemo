@@ -74,13 +74,39 @@ fn call_tool(cwd: &Path, params: Value) -> anyhow::Result<Value> {
     let repo = store::find_repo_root(cwd)?;
     let result = match request.name.as_str() {
         "promemo_load_context" => {
-            let args: FeatureArgs = serde_json::from_value(arguments)?;
-            serde_json::to_value(store::load_context(&repo, &args.feature)?)?
+            let args: LoadContextArgs = serde_json::from_value(arguments)?;
+            serde_json::to_value(load_context_for_mcp(&repo, &args)?)?
         }
         "promemo_search" => {
             let args: SearchArgs = serde_json::from_value(arguments)?;
             serde_json::to_value(search::keyword_search(&repo, &args.query)?)?
         }
+        "promemo_search_context" => {
+            let args: SearchContextArgs = serde_json::from_value(arguments)?;
+            serde_json::to_value(search::search(
+                &repo,
+                &args.query,
+                args.mode.unwrap_or_default().into(),
+                Some(args.limit.unwrap_or(5)),
+            )?)?
+        }
+        "promemo_index_status" => serde_json::to_value(search::index_status(&repo)?)?,
+        "promemo_index_rebuild" => {
+            let index = search::rebuild_index(&repo)?;
+            json!({
+                "version": index.version,
+                "generated_by": index.generated_by,
+                "chunks": index.chunks.len(),
+                "features": index.graph.features.len(),
+                "files": index.graph.files.len(),
+                "decisions": index.graph.decisions.len()
+            })
+        }
+        "promemo_related_features" => {
+            let args: FeatureArgs = serde_json::from_value(arguments)?;
+            serde_json::to_value(search::related_features(&repo, &args.feature)?)?
+        }
+        "promemo_project_map" => serde_json::to_value(search::project_map(&repo)?)?,
         "promemo_save_memory" => {
             let args: SaveMemoryArgs = serde_json::from_value(arguments)?;
             let report = if args.dry_run.unwrap_or(false) {
@@ -138,6 +164,63 @@ fn call_tool(cwd: &Path, params: Value) -> anyhow::Result<Value> {
             "text": serde_json::to_string_pretty(&result)?
         }]
     }))
+}
+
+fn load_context_for_mcp(
+    repo: &Path,
+    args: &LoadContextArgs,
+) -> anyhow::Result<models::LoadedContext> {
+    let mut context = store::load_context(repo, &args.feature)?;
+    if let Some(budget) = args.token_budget {
+        context.text = token_budget_text(&context.text, budget);
+    }
+    if args.related.unwrap_or(false) {
+        append_related_features(repo, &mut context, &args.feature)?;
+    }
+    Ok(context)
+}
+
+fn append_related_features(
+    repo: &Path,
+    context: &mut models::LoadedContext,
+    feature: &str,
+) -> anyhow::Result<()> {
+    let related = search::related_features(repo, feature)?;
+    if related.is_empty() {
+        return Ok(());
+    }
+    let features = index::load_features(repo)?;
+    let mut by_name = std::collections::BTreeMap::new();
+    for item in features {
+        by_name.insert(item.name.clone(), item);
+    }
+    context.text.push_str("\n\n## Related Features\n\n");
+    for name in related {
+        if let Some(item) = by_name.get(&name) {
+            context
+                .text
+                .push_str(&format!("- `{}`: {}\n", item.name, item.summary));
+        } else {
+            context.text.push_str(&format!("- `{}`\n", name));
+        }
+    }
+    Ok(())
+}
+
+fn token_budget_text(text: &str, budget: usize) -> String {
+    if budget == 0 {
+        return String::new();
+    }
+    let mut words = text.split_whitespace().collect::<Vec<_>>();
+    if words.len() <= budget {
+        return text.to_string();
+    }
+    words.truncate(budget);
+    format!(
+        "{}\n\n[Promemo truncated context to approximately {} tokens.]",
+        words.join(" "),
+        budget
+    )
 }
 
 fn extraction_result(
@@ -262,17 +345,68 @@ fn tools() -> Vec<Value> {
     vec![
         json!({
             "name": "promemo_load_context",
-            "description": "Load prompt-ready Promemo context for a feature.",
+            "description": "Load prompt-ready Promemo context for a feature. Supports optional related feature expansion and token-budgeted context for MCP hosts.",
+            "inputSchema": object_schema(json!({
+                "feature": string_schema("Feature name or slug"),
+                "related": {
+                    "type": "boolean",
+                    "description": "Include related feature summaries inferred from shared files and decisions.",
+                    "default": false
+                },
+                "token_budget": {
+                    "type": "integer",
+                    "description": "Approximate maximum number of whitespace-delimited tokens for the main loaded context.",
+                    "minimum": 0
+                }
+            }), vec!["feature"])
+        }),
+        json!({
+            "name": "promemo_search",
+            "description": "Keyword-search saved Promemo Markdown memory and return exact matching lines. Kept stable for compatibility.",
+            "inputSchema": object_schema(json!({
+                "query": string_schema("Keyword search query")
+            }), vec!["query"])
+        }),
+        json!({
+            "name": "promemo_search_context",
+            "description": "Search chunked Promemo memory with keyword, semantic, or hybrid ranking for broader project-context questions.",
+            "inputSchema": object_schema(json!({
+                "query": string_schema("Search query"),
+                "mode": {
+                    "type": "string",
+                    "description": "Ranking mode. Use hybrid for most natural-language project questions.",
+                    "enum": ["keyword", "semantic", "hybrid"],
+                    "default": "hybrid"
+                },
+                "limit": {
+                    "type": "integer",
+                    "description": "Maximum number of matches to return.",
+                    "minimum": 1,
+                    "default": 5
+                }
+            }), vec!["query"])
+        }),
+        json!({
+            "name": "promemo_index_status",
+            "description": "Return status and counts for the generated local Promemo search index.",
+            "inputSchema": object_schema(json!({}), Vec::<&str>::new())
+        }),
+        json!({
+            "name": "promemo_index_rebuild",
+            "description": "Rebuild the generated local Promemo search index cache. This writes only reproducible cache data under .promemo/cache.",
+            "inputSchema": object_schema(json!({}), Vec::<&str>::new())
+        }),
+        json!({
+            "name": "promemo_related_features",
+            "description": "Return feature names related to a target feature through shared files or decisions.",
             "inputSchema": object_schema(json!({
                 "feature": string_schema("Feature name or slug")
             }), vec!["feature"])
         }),
         json!({
-            "name": "promemo_search",
-            "description": "Search saved Promemo Markdown memory.",
-            "inputSchema": object_schema(json!({
-                "query": string_schema("Keyword search query")
-            }), vec!["query"])
+            "name": "promemo_project_map",
+            "description": "Return the local feature, file, decision, and related-feature graph from Promemo memory.",
+            "inputSchema": object_schema(json!({}), Vec::<&str>::new())
         }),
         json!({
             "name": "promemo_save_memory",
@@ -459,8 +593,41 @@ struct FeatureArgs {
 }
 
 #[derive(Debug, Deserialize)]
+struct LoadContextArgs {
+    feature: String,
+    related: Option<bool>,
+    token_budget: Option<usize>,
+}
+
+#[derive(Debug, Deserialize)]
 struct SearchArgs {
     query: String,
+}
+
+#[derive(Debug, Deserialize)]
+struct SearchContextArgs {
+    query: String,
+    mode: Option<SearchContextMode>,
+    limit: Option<usize>,
+}
+
+#[derive(Debug, Deserialize, Default)]
+#[serde(rename_all = "snake_case")]
+enum SearchContextMode {
+    Keyword,
+    Semantic,
+    #[default]
+    Hybrid,
+}
+
+impl From<SearchContextMode> for search::SearchMode {
+    fn from(value: SearchContextMode) -> Self {
+        match value {
+            SearchContextMode::Keyword => search::SearchMode::Keyword,
+            SearchContextMode::Semantic => search::SearchMode::Semantic,
+            SearchContextMode::Hybrid => search::SearchMode::Hybrid,
+        }
+    }
 }
 
 #[derive(Debug, Deserialize)]

@@ -49,8 +49,8 @@ details live at [`docs/distribution.md`](docs/distribution.md).
 Run with npm without a global install:
 
 ```bash
-npx promemo --version
-npx promemo init
+npx -y promemo@latest --version
+npx -y promemo@latest init
 ```
 
 Or install globally:
@@ -60,10 +60,16 @@ npm install -g promemo
 promemo --version
 ```
 
+Install the latest release binary directly:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/seguelabs/promemo/main/scripts/install.sh | sh
+```
+
 Install the latest released tag from GitHub with Cargo:
 
 ```bash
-cargo install --git https://github.com/seguelabsai/promemo.git --tag v0.3.9
+cargo install --git https://github.com/seguelabs/promemo.git --tag v0.4.0
 ```
 
 Or install from a local checkout:
@@ -137,12 +143,21 @@ Load prompt-ready context:
 promemo load authentication
 ```
 
+Load compact context with related feature expansion:
+
+```bash
+promemo load authentication --related --token-budget 1200
+```
+
 Inspect saved memory:
 
 ```bash
 promemo list
 promemo tree --json
 promemo search "refresh token"
+promemo search "why did we choose passkeys" --hybrid --limit 5
+promemo index rebuild
+promemo index status
 promemo open authentication
 promemo doctor --json
 ```
@@ -153,10 +168,12 @@ Run the MCP stdio server for MCP-capable assistants:
 promemo mcp
 ```
 
-The MCP server exposes tools for loading context, searching memory, previewing
-and saving structured memory, extracting memory with the configured provider,
-listing features, reading feature memory files, inspecting the memory tree,
-running doctor checks, and collecting repository snapshots.
+The MCP server exposes tools for loading token-budgeted context, keyword and
+hybrid/semantic search, index status and rebuilds, related feature discovery,
+project memory maps, previewing and saving structured memory, extracting memory
+with the configured provider, listing features, reading feature memory files,
+inspecting the memory tree, running doctor checks, and collecting repository
+snapshots.
 Provider extraction previews return both the exact generated `MemoryInput` and
 the save report, so assistants can ask for approval and then save the reviewed
 memory with `promemo_save_memory`.
@@ -210,6 +227,19 @@ Preview repository state for a feature:
 promemo snapshot authentication --dry-run --json
 ```
 
+Generate shell completions:
+
+```bash
+promemo completions zsh > _promemo
+promemo completions bash > promemo.bash
+```
+
+Generate CLI usage documentation:
+
+```bash
+promemo docs > docs/cli.md
+```
+
 ## Development
 
 Install Rust, then run:
@@ -227,14 +257,14 @@ cargo run -- init
 Promemo's CLI version comes from `Cargo.toml`:
 
 ```toml
-version = "0.3.9"
+version = "0.4.0"
 ```
 
 For a release, update that version, tag the matching commit, and reinstall from
 the checkout:
 
 ```bash
-git tag v0.3.9
+git tag v0.4.0
 cargo install --path .
 promemo --version
 ```
@@ -242,8 +272,9 @@ promemo --version
 Install or update from a release tag:
 
 ```bash
-cargo install --git https://github.com/seguelabsai/promemo.git --tag v0.3.9 --force
+cargo install --git https://github.com/seguelabs/promemo.git --tag v0.4.0 --force
 ```
 
-Homebrew and npm distribution are planned after GitHub release artifacts are
-published. See [`docs/distribution.md`](docs/distribution.md).
+npm and GitHub release binaries are available now. A Homebrew formula seed lives
+in `packaging/homebrew/promemo.rb`. See
+[`docs/distribution.md`](docs/distribution.md).

@@ -1,10 +1,10 @@
 [package]
 name = "promemo"
-version = "0.3.9"
+version = "0.4.0"
 edition = "2021"
 description = "Git-native project memory for AI-assisted development"
 license = "MIT"
-repository = "https://github.com/seguelabsai/promemo"
+repository = "https://github.com/seguelabs/promemo"
 readme = "README.md"
 keywords = ["cli", "git", "memory", "ai", "developer-tools"]
 categories = ["command-line-utilities", "development-tools"]
@@ -12,6 +12,7 @@ categories = ["command-line-utilities", "development-tools"]
 [dependencies]
 anyhow = "1"
 clap = { version = "4", features = ["derive"] }
+clap_complete = "4"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 thiserror = "2"
