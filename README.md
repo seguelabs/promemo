@@ -49,8 +49,8 @@ details live at [`docs/distribution.md`](docs/distribution.md).
 Run with npm without a global install:
 
 ```bash
-npx promemo --version
-npx promemo init
+npx -y promemo@latest --version
+npx -y promemo@latest init
 ```
 
 Or install globally:
@@ -58,6 +58,12 @@ Or install globally:
 ```bash
 npm install -g promemo
 promemo --version
+```
+
+Install the latest release binary directly:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/seguelabsai/promemo/main/scripts/install.sh | sh
 ```
 
 Install the latest released tag from GitHub with Cargo:
@@ -137,12 +143,21 @@ Load prompt-ready context:
 promemo load authentication
 ```
 
+Load compact context with related feature expansion:
+
+```bash
+promemo load authentication --related --token-budget 1200
+```
+
 Inspect saved memory:
 
 ```bash
 promemo list
 promemo tree --json
 promemo search "refresh token"
+promemo search "why did we choose passkeys" --hybrid --limit 5
+promemo index rebuild
+promemo index status
 promemo open authentication
 promemo doctor --json
 ```
@@ -210,6 +225,19 @@ Preview repository state for a feature:
 promemo snapshot authentication --dry-run --json
 ```
 
+Generate shell completions:
+
+```bash
+promemo completions zsh > _promemo
+promemo completions bash > promemo.bash
+```
+
+Generate CLI usage documentation:
+
+```bash
+promemo docs > docs/cli.md
+```
+
 ## Development
 
 Install Rust, then run:
@@ -245,5 +273,6 @@ Install or update from a release tag:
 cargo install --git https://github.com/seguelabsai/promemo.git --tag v0.3.9 --force
 ```
 
-Homebrew and npm distribution are planned after GitHub release artifacts are
-published. See [`docs/distribution.md`](docs/distribution.md).
+npm and GitHub release binaries are available now. A Homebrew formula seed lives
+in `packaging/homebrew/promemo.rb`. See
+[`docs/distribution.md`](docs/distribution.md).

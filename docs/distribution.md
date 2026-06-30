@@ -1,7 +1,7 @@
 # Distribution
 
-Promemo distribution should start with the simplest reliable path and then add
-package managers once release artifacts are stable.
+Promemo distribution supports npm, GitHub release binaries, source installs, a
+direct install script, and a Homebrew formula seed.
 
 ## Version Source
 
@@ -81,6 +81,28 @@ SHA256SUMS
 
 Those artifacts become the source for npm and Homebrew wrappers.
 
+## Direct Binary Install Script
+
+Users can install the latest release binary without cloning the repository:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/seguelabsai/promemo/main/scripts/install.sh | sh
+```
+
+The script:
+
+- detects macOS arm64, Linux x64, or Windows x64 shells
+- downloads the matching release archive
+- downloads `SHA256SUMS`
+- verifies the archive when `sha256sum` or `shasum` is available
+- installs to `$HOME/.local/bin` by default
+
+Override the install location or version:
+
+```bash
+PROMEMO_INSTALL_DIR=/usr/local/bin PROMEMO_VERSION=v0.3.9 sh scripts/install.sh
+```
+
 ## npm
 
 npm is the first package-manager distribution target for Promemo because it gives
@@ -89,9 +111,9 @@ AI-tool users a quick cross-platform path to `npx promemo` and global installs.
 Expected user flow:
 
 ```bash
-npx promemo --version
-npx promemo init
-npm install -g promemo
+npx -y promemo@latest --version
+npx -y promemo@latest init
+npm install -g promemo@latest
 promemo --version
 npm update -g promemo
 ```
@@ -123,7 +145,9 @@ For scoped packages use `npm publish --access public`, but the unscoped
 
 ## Homebrew
 
-Homebrew can follow after npm for users who prefer native package managers.
+Homebrew support starts from the formula seed in
+`packaging/homebrew/promemo.rb`. Copy that file into a tap repository at
+`Formula/promemo.rb`.
 
 Expected user flow:
 
@@ -132,21 +156,21 @@ brew install seguelabsai/tap/promemo
 brew upgrade promemo
 ```
 
-Implementation path:
+Tap setup:
 
 1. Create a Homebrew tap repository such as `homebrew-tap`.
-2. Add a `Formula/promemo.rb` formula.
-3. Point the formula at the GitHub release archive for the current tag.
-4. Update the formula SHA for each release.
+2. Copy `packaging/homebrew/promemo.rb` to `Formula/promemo.rb`.
+3. Update the formula URL and SHA for each release.
+4. Push the tap.
 
-Formula template:
+Current formula seed:
 
 ```ruby
 class Promemo < Formula
   desc "Git-native project memory for AI-assisted development"
   homepage "https://github.com/seguelabsai/promemo"
   url "https://github.com/seguelabsai/promemo/archive/refs/tags/v0.3.9.tar.gz"
-  sha256 "REPLACE_WITH_RELEASE_TARBALL_SHA"
+  sha256 "78d08a7701b784903e9a48c646bf5832b9b5dc554f47af1f8e5f4e8ee9a6251d"
   license "MIT"
 
   depends_on "rust" => :build
@@ -157,6 +181,7 @@ class Promemo < Formula
 
   test do
     assert_match "promemo", shell_output("#{bin}/promemo --version")
+    system bin/"promemo", "--help"
   end
 end
 ```

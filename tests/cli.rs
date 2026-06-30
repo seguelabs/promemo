@@ -548,6 +548,156 @@ fn binary_search_reports_no_matches_in_human_mode() {
 }
 
 #[test]
+fn binary_completions_and_docs_are_generated_from_cli() {
+    let completions = promemo().args(["completions", "bash"]).output().unwrap();
+    assert!(
+        completions.status.success(),
+        "{}",
+        String::from_utf8_lossy(&completions.stderr)
+    );
+    assert!(String::from_utf8_lossy(&completions.stdout).contains("_promemo"));
+
+    let docs = promemo().arg("docs").output().unwrap();
+    assert!(
+        docs.status.success(),
+        "{}",
+        String::from_utf8_lossy(&docs.stderr)
+    );
+    let text = String::from_utf8_lossy(&docs.stdout);
+    assert!(text.contains("# Promemo CLI Usage"));
+    assert!(text.contains("### `search`"));
+}
+
+#[test]
+fn binary_index_rebuild_status_and_hybrid_search_work() {
+    let dir = tempfile::tempdir().unwrap();
+    let init = promemo()
+        .arg("init")
+        .current_dir(dir.path())
+        .output()
+        .unwrap();
+    assert!(init.status.success());
+
+    let mut save = promemo()
+        .args(["save-json", "authentication"])
+        .current_dir(dir.path())
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .unwrap();
+    save.stdin
+        .as_mut()
+        .unwrap()
+        .write_all(include_bytes!("../examples/memory.json"))
+        .unwrap();
+    assert!(save.wait_with_output().unwrap().status.success());
+
+    let rebuild = promemo()
+        .args(["index", "rebuild", "--json"])
+        .current_dir(dir.path())
+        .output()
+        .unwrap();
+    assert!(
+        rebuild.status.success(),
+        "{}",
+        String::from_utf8_lossy(&rebuild.stderr)
+    );
+    let index: serde_json::Value = serde_json::from_slice(&rebuild.stdout).unwrap();
+    assert!(index["chunks"].as_array().unwrap().len() > 1);
+    assert!(dir.path().join(".promemo/cache/search-index.json").exists());
+
+    let status = promemo()
+        .args(["index", "status", "--json"])
+        .current_dir(dir.path())
+        .output()
+        .unwrap();
+    assert!(status.status.success());
+    let status_json: serde_json::Value = serde_json::from_slice(&status.stdout).unwrap();
+    assert_eq!(status_json["exists"], true);
+    assert!(status_json["chunks"].as_u64().unwrap() > 1);
+
+    let search = promemo()
+        .args([
+            "search",
+            "identity passkeys",
+            "--hybrid",
+            "--limit",
+            "3",
+            "--json",
+        ])
+        .current_dir(dir.path())
+        .output()
+        .unwrap();
+    assert!(search.status.success());
+    let matches: serde_json::Value = serde_json::from_slice(&search.stdout).unwrap();
+    assert!(!matches.as_array().unwrap().is_empty());
+    assert_eq!(matches[0]["feature"], "authentication");
+}
+
+#[test]
+fn binary_load_supports_related_features_and_token_budget() {
+    let dir = tempfile::tempdir().unwrap();
+    let init = promemo()
+        .arg("init")
+        .current_dir(dir.path())
+        .output()
+        .unwrap();
+    assert!(init.status.success());
+
+    for (feature, title) in [
+        ("authentication", "Authentication"),
+        ("session-store", "Session Store"),
+    ] {
+        let memory = serde_json::json!({
+            "title": title,
+            "summary": format!("{title} uses src/auth.rs for token handling and session state."),
+            "files": [
+                {
+                    "path": "src/auth.rs",
+                    "reason": "Shared token handling implementation."
+                }
+            ]
+        });
+        let mut save = promemo()
+            .args(["save-json", feature])
+            .current_dir(dir.path())
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
+            .unwrap();
+        save.stdin
+            .as_mut()
+            .unwrap()
+            .write_all(memory.to_string().as_bytes())
+            .unwrap();
+        assert!(save.wait_with_output().unwrap().status.success());
+    }
+
+    let output = promemo()
+        .args([
+            "load",
+            "authentication",
+            "--related",
+            "--token-budget",
+            "20",
+        ])
+        .current_dir(dir.path())
+        .output()
+        .unwrap();
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let text = String::from_utf8_lossy(&output.stdout);
+    assert!(text.contains("Related Features"));
+    assert!(text.contains("session-store"));
+    assert!(text.contains("truncated context"));
+}
+
+#[test]
 fn binary_open_missing_feature_reports_clear_error() {
     let dir = tempfile::tempdir().unwrap();
 
