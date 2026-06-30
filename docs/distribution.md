@@ -8,7 +8,7 @@ direct install script, and a Homebrew formula seed.
 The CLI version is the Cargo package version in `Cargo.toml`:
 
 ```toml
-version = "0.3.9"
+version = "0.4.0"
 ```
 
 The CLI exposes that value with:
@@ -20,8 +20,8 @@ promemo --version
 Release tags should match the Cargo version with a leading `v`:
 
 ```txt
-Cargo.toml: 0.3.9
-Git tag:    v0.3.9
+Cargo.toml: 0.4.0
+Git tag:    v0.4.0
 ```
 
 ## Release Flow
@@ -42,8 +42,8 @@ Git tag:    v0.3.9
 6. Tag the release commit:
 
    ```bash
-   git tag v0.3.9
-   git push origin v0.3.9
+   git tag v0.4.0
+   git push origin v0.4.0
    ```
 
 7. Confirm the `Release` workflow completes and attaches platform archives to
@@ -55,13 +55,13 @@ This is the first supported distribution path because it needs no external
 registry setup:
 
 ```bash
-cargo install --git https://github.com/seguelabs/promemo.git --tag v0.3.9
+cargo install --git https://github.com/seguelabs/promemo.git --tag v0.4.0
 ```
 
 Update to a newer tag:
 
 ```bash
-cargo install --git https://github.com/seguelabs/promemo.git --tag v0.3.9 --force
+cargo install --git https://github.com/seguelabs/promemo.git --tag v0.4.0 --force
 ```
 
 ## GitHub Releases
@@ -100,7 +100,7 @@ The script:
 Override the install location or version:
 
 ```bash
-PROMEMO_INSTALL_DIR=/usr/local/bin PROMEMO_VERSION=v0.3.9 sh scripts/install.sh
+PROMEMO_INSTALL_DIR=/usr/local/bin PROMEMO_VERSION=v0.4.0 sh scripts/install.sh
 ```
 
 ## npm
@@ -170,8 +170,8 @@ Current formula seed:
 class Promemo < Formula
   desc "Git-native project memory for AI-assisted development"
   homepage "https://github.com/seguelabs/promemo"
-  url "https://github.com/seguelabs/promemo/archive/refs/tags/v0.3.9.tar.gz"
-  sha256 "78d08a7701b784903e9a48c646bf5832b9b5dc554f47af1f8e5f4e8ee9a6251d"
+  url "https://github.com/seguelabs/promemo/archive/refs/tags/v0.4.0.tar.gz"
+  sha256 "REPLACE_WITH_V0_4_0_SOURCE_TARBALL_SHA"
   license "MIT"
 
   depends_on "rust" => :build
@@ -185,6 +185,13 @@ class Promemo < Formula
     system bin/"promemo", "--help"
   end
 end
+```
+
+After tagging, compute the source tarball SHA:
+
+```bash
+curl -L -o /tmp/promemo-v0.4.0.tar.gz https://github.com/seguelabs/promemo/archive/refs/tags/v0.4.0.tar.gz
+shasum -a 256 /tmp/promemo-v0.4.0.tar.gz
 ```
 
 Prebuilt bottles can come later.
