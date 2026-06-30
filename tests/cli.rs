@@ -890,6 +890,33 @@ timeout_seconds = 1
     let save_output = save.wait_with_output().unwrap();
     assert!(save_output.status.success());
 
+    let related_memory = serde_json::json!({
+        "title": "Session Store",
+        "summary": "Session storage shares authentication middleware and token state.",
+        "files": [
+            {
+                "path": "src/auth/middleware.rs",
+                "reason": "Shares token validation state with authentication."
+            }
+        ]
+    });
+    let mut save_related = promemo()
+        .args(["save-json", "session-store"])
+        .current_dir(dir.path())
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .unwrap();
+    save_related
+        .stdin
+        .as_mut()
+        .unwrap()
+        .write_all(related_memory.to_string().as_bytes())
+        .unwrap();
+    let save_related_output = save_related.wait_with_output().unwrap();
+    assert!(save_related_output.status.success());
+
     let memory: serde_json::Value =
         serde_json::from_slice(include_bytes!("../examples/memory.json")).unwrap();
     let messages = [
@@ -1009,6 +1036,70 @@ timeout_seconds = 1
             "id": 13,
             "method": "tools/call",
             "params": {
+                "name": "promemo_search_context",
+                "arguments": {
+                    "query": "identity passkeys",
+                    "mode": "hybrid",
+                    "limit": 3
+                }
+            }
+        })),
+        mcp_frame(serde_json::json!({
+            "jsonrpc": "2.0",
+            "id": 14,
+            "method": "tools/call",
+            "params": {
+                "name": "promemo_load_context",
+                "arguments": {
+                    "feature": "authentication",
+                    "related": true,
+                    "token_budget": 24
+                }
+            }
+        })),
+        mcp_frame(serde_json::json!({
+            "jsonrpc": "2.0",
+            "id": 15,
+            "method": "tools/call",
+            "params": {
+                "name": "promemo_index_status",
+                "arguments": {}
+            }
+        })),
+        mcp_frame(serde_json::json!({
+            "jsonrpc": "2.0",
+            "id": 16,
+            "method": "tools/call",
+            "params": {
+                "name": "promemo_index_rebuild",
+                "arguments": {}
+            }
+        })),
+        mcp_frame(serde_json::json!({
+            "jsonrpc": "2.0",
+            "id": 17,
+            "method": "tools/call",
+            "params": {
+                "name": "promemo_related_features",
+                "arguments": {
+                    "feature": "authentication"
+                }
+            }
+        })),
+        mcp_frame(serde_json::json!({
+            "jsonrpc": "2.0",
+            "id": 18,
+            "method": "tools/call",
+            "params": {
+                "name": "promemo_project_map",
+                "arguments": {}
+            }
+        })),
+        mcp_frame(serde_json::json!({
+            "jsonrpc": "2.0",
+            "id": 19,
+            "method": "tools/call",
+            "params": {
                 "name": "promemo_extract_memory",
                 "arguments": {
                     "feature": "extracted-auth",
@@ -1018,13 +1109,13 @@ timeout_seconds = 1
         })),
         mcp_frame(serde_json::json!({
             "jsonrpc": "2.0",
-            "id": 14,
+            "id": 20,
             "method": "resources/list",
             "params": {}
         })),
         mcp_frame(serde_json::json!({
             "jsonrpc": "2.0",
-            "id": 15,
+            "id": 21,
             "method": "prompts/list",
             "params": {}
         })),
@@ -1054,7 +1145,7 @@ timeout_seconds = 1
         String::from_utf8_lossy(&output.stderr)
     );
     let responses = parse_mcp_frames(&output.stdout);
-    assert_eq!(responses.len(), 15);
+    assert_eq!(responses.len(), 21);
     assert_eq!(responses[0]["result"]["serverInfo"]["name"], "promemo");
     assert!(responses[1]["result"]["tools"]
         .as_array()
@@ -1071,6 +1162,16 @@ timeout_seconds = 1
         .unwrap()
         .iter()
         .any(|tool| tool["name"] == "promemo_read_feature_file"));
+    assert!(responses[1]["result"]["tools"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|tool| tool["name"] == "promemo_search_context"));
+    assert!(responses[1]["result"]["tools"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|tool| tool["name"] == "promemo_project_map"));
     assert!(responses[2]["result"]["content"][0]["text"]
         .as_str()
         .unwrap()
@@ -1111,16 +1212,44 @@ timeout_seconds = 1
         .as_str()
         .unwrap()
         .contains("\"file\": \"memory.md\""));
-    assert!(responses[12]["error"]["message"]
+    assert!(responses[12]["result"]["content"][0]["text"]
+        .as_str()
+        .unwrap()
+        .contains("\"feature\": \"authentication\""));
+    assert!(responses[13]["result"]["content"][0]["text"]
+        .as_str()
+        .unwrap()
+        .contains("Related Features"));
+    assert!(responses[13]["result"]["content"][0]["text"]
+        .as_str()
+        .unwrap()
+        .contains("session-store"));
+    assert!(responses[14]["result"]["content"][0]["text"]
+        .as_str()
+        .unwrap()
+        .contains("\"exists\": true"));
+    assert!(responses[15]["result"]["content"][0]["text"]
+        .as_str()
+        .unwrap()
+        .contains("\"chunks\""));
+    assert!(responses[16]["result"]["content"][0]["text"]
+        .as_str()
+        .unwrap()
+        .contains("session-store"));
+    assert!(responses[17]["result"]["content"][0]["text"]
+        .as_str()
+        .unwrap()
+        .contains("src/auth/middleware.rs"));
+    assert!(responses[18]["error"]["message"]
         .as_str()
         .unwrap()
         .contains("PROMEMO_TEST_MCP_MISSING_API_KEY"));
-    assert!(responses[13]["result"]["resources"]
+    assert!(responses[19]["result"]["resources"]
         .as_array()
         .unwrap()
         .iter()
         .any(|resource| resource["uri"] == "promemo://features/authentication"));
-    assert!(responses[14]["result"]["prompts"]
+    assert!(responses[20]["result"]["prompts"]
         .as_array()
         .unwrap()
         .iter()

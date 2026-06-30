@@ -186,6 +186,39 @@ needed for commands that ask Promemo to call an LLM provider, such as extraction
 from messy notes. Configure those through `.promemo/config.toml` and the
 environment variable named in that config.
 
+## MCP Tool Surface
+
+Promemo MCP tools use stable verb-noun names, explicit JSON schemas, and
+preview-first flows for provider-generated memory. The main tools are:
+
+- `promemo_load_context`: load prompt-ready context for a feature. Optional
+  `related` and `token_budget` arguments match the CLI's related-feature and
+  compact-context flows.
+- `promemo_search`: compatibility keyword search that returns exact matching
+  Markdown lines.
+- `promemo_search_context`: v4 retrieval search over chunked memory. Use
+  `mode: "hybrid"` for most natural-language project questions.
+- `promemo_index_status`: inspect whether the generated local search index
+  exists and how many chunks, features, files, and decisions it contains.
+- `promemo_index_rebuild`: rebuild the generated `.promemo/cache` search index.
+  This writes only reproducible cache data.
+- `promemo_related_features`: list features related through shared files or
+  decisions.
+- `promemo_project_map`: return the feature, file, decision, and related-feature
+  graph.
+- `promemo_preview_memory`: preview a structured memory write.
+- `promemo_save_memory`: save reviewed structured memory.
+- `promemo_extract_memory`: ask the configured provider to extract structured
+  memory. This defaults to `dry_run: true`, so assistants must opt in before
+  provider-generated memory writes files.
+- `promemo_memory_schema`: return the MemoryInput JSON schema.
+- `promemo_list_features`: list saved features.
+- `promemo_tree`: list Promemo memory files.
+- `promemo_doctor`: run repository health checks.
+- `promemo_read_feature_file`: read an allowed generated feature Markdown file.
+- `promemo_snapshot`: collect git state, TODOs, and existing memory for a
+  feature. This defaults to dry-run behavior.
+
 ## Handoff Template
 
 ```md

@@ -168,10 +168,12 @@ Run the MCP stdio server for MCP-capable assistants:
 promemo mcp
 ```
 
-The MCP server exposes tools for loading context, searching memory, previewing
-and saving structured memory, extracting memory with the configured provider,
-listing features, reading feature memory files, inspecting the memory tree,
-running doctor checks, and collecting repository snapshots.
+The MCP server exposes tools for loading token-budgeted context, keyword and
+hybrid/semantic search, index status and rebuilds, related feature discovery,
+project memory maps, previewing and saving structured memory, extracting memory
+with the configured provider, listing features, reading feature memory files,
+inspecting the memory tree, running doctor checks, and collecting repository
+snapshots.
 Provider extraction previews return both the exact generated `MemoryInput` and
 the save report, so assistants can ask for approval and then save the reviewed
 memory with `promemo_save_memory`.

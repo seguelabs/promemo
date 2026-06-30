@@ -212,6 +212,10 @@ pub fn related_features(repo: &Path, feature: &str) -> anyhow::Result<Vec<String
     Ok(node.related_features.iter().cloned().collect())
 }
 
+pub fn project_map(repo: &Path) -> anyhow::Result<RelationshipGraph> {
+    Ok(load_or_rebuild_index(repo)?.graph)
+}
+
 fn load_or_rebuild_index(repo: &Path) -> anyhow::Result<SearchIndex> {
     match load_index(repo) {
         Ok(index) if index.version == INDEX_VERSION && index_is_fresh(repo)? => Ok(index),
